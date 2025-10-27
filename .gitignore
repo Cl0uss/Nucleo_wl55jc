@@ -1,0 +1,22 @@
+# Zephyr build artifacts
+build/
+*.log
+*.elf
+*.bin
+*.hex
+
+# CLion / CMake
+.idea/
+.cmake/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Temporary
+*.swp
+*.tmp
+*.bak
+
+# Python cache
+__pycache__/
+*.pyc

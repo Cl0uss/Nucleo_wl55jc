@@ -1,0 +1,34 @@
+&i2c2 {
+	status = "okay";
+	clock-frequency = <100000>;
+};
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pb13 &i2c3_sda_pb14>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		led_r: led_r {
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			label = "LED_R";
+		};
+		led_g: led_g {
+			gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+			label = "LED_G";
+		};
+		led_b: led_b {
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			label = "LED_B";
+		};
+	};
+
+	aliases {
+		led0r = &led_r;
+		led0g = &led_g;
+		led0b = &led_b;
+	};
+};
