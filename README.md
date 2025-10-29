@@ -3,12 +3,19 @@
 This repository contains a collection of Zephyr-based projects for the **Nucleo-WL55JC** development board.
 
 ---
+## 🚀 Usage
 
+1. Open **VS Code** in the `Nucleo_wl55jc` directory.  
+2. Press **Ctrl + Shift + B**.  
+3. Choose the project number you want to build.  
+4. Wait for the build process to complete.
+
+---
 ## 📂 Project Structure
 
 ```
 Nucleo_wl55jc/
-├── brightnessControl/      # Example Zephyr application
+├── [Projects]              # Example Zephyr application
 ├── .vscode/                # Visual Studio Code configuration
 ├── build_project.sh        # Bash script for automated project build
 └── README.md
@@ -51,34 +58,3 @@ It performs the following steps:
    ```bash
    west build --pristine=always -b nucleo_wl55jc
    ```
-
----
-
-## 🚀 Usage
-
-1. Open **VS Code** in the `Nucleo_wl55jc` directory.  
-2. Press **Ctrl + Shift + B**.  
-3. Choose the project number you want to build.  
-4. Wait for the build process to complete.
-
-> 💡 To flash the firmware to your board after building:
-> ```bash
-> west flash
-> ```
-
----
-
-## 🧰 Requirements
-
-- **Zephyr SDK** installed and available in the system `PATH`.  
-- The environment variable `ZEPHYR_BASE` points to your Zephyr installation.  
-- The virtual environment can be activated via:
-  ```bash
-  source ~/zephyrproject/.venv/bin/activate
-  ```
-
----
-
-## 📄 License
-
-MIT License (or specify another license if needed)
