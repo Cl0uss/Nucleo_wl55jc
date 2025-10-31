@@ -44,7 +44,6 @@ const struct device *i2c;
 bool saved = false;
 
 
-
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON, gpios);
 static struct gpio_callback button_cb_data;
 
@@ -52,6 +51,7 @@ static struct gpio_callback button_cb_data;
 
 
 enum Mode { NORMAL, BLUE, OFF};
+enum Mode saved_last;
 enum Mode mode = NORMAL;
 
 void buffer_changer(uint8_t *buff, uint8_t first, uint8_t second) {
@@ -105,7 +105,9 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t
         }
     }
 
-    mode = (mode == BLUE || mode == OFF) ? NORMAL : BLUE;
+    if (mode == OFF) mode = saved_last;
+    else if (mode == NORMAL) mode = BLUE;
+    else mode = NORMAL;
 }
 
 
@@ -133,8 +135,8 @@ void main (void) {
     tcs34725_init();
 
     while (true) {
-
         if ( mode == NORMAL) {
+            saved_last = NORMAL;
             printk("=== NORMAL MODE ===\n");
             k_thread_resume(sensor_thread);
             printk("thread activated\n");
@@ -147,6 +149,7 @@ void main (void) {
         }
 
         else if ( mode == BLUE ) {
+            saved_last = BLUE;
             printk("=== BLUE MODE ===\n");
             rgb_set(&led, 0, 0, 1); 
             while (mode == BLUE) k_msleep(100);
