@@ -13,27 +13,27 @@ if [ ${#projects[@]} -eq 0 ]; then
 fi
 
 # displaying list
-echo "📦 Найденные проекты:"
+echo "📦 Found projects:"
 for i in "${!projects[@]}"; do
   echo "$((i+1))) ${projects[$i]}"
 done
 
 # asking for choice
-echo -n "Введите номер проекта: "
+echo -n "Enter projects number: "
 read -r choice
 
 # checking choice
 if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "${#projects[@]}" ]; then
-  echo "❌ Неверный номер."
+  echo "❌ Wrong number."
   exit 1
 fi
 
 project="${projects[$((choice-1))]}"
-echo "🚀 Сборка проекта: $project"
+echo "🚀 Project build: $project"
 
 # activating .venv
 source ~/zephyrproject/.venv/bin/activate
 
-# west build 
+# west build and flash
 cd "$project"
 west build --pristine=always -b nucleo_wl55jc && west flash
