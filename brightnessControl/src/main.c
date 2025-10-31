@@ -97,7 +97,7 @@ void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t
     bool pressed = gpio_pin_get_dt(&button);
     int64_t start = k_uptime_get();
 
-    while (pressed) {
+    while (pressed && mode != OFF) {
         pressed = gpio_pin_get_dt(&button);
         if (k_uptime_get() - start >= 1000) {
             mode = OFF;
