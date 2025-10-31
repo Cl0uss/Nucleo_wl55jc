@@ -36,4 +36,4 @@ source ~/zephyrproject/.venv/bin/activate
 
 # west build 
 cd "$project"
-west build --pristine=always -b nucleo_wl55jc
+west build --pristine=always -b nucleo_wl55jc && west flash
