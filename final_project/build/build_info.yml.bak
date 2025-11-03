@@ -1,4 +1,0 @@
-west:
-  command: /home/cl0us/zephyrproject/.venv/bin/west build --pristine=always -b nucleo_wl55jc
-  topdir: /home/cl0us/zephyrproject
-  version: 1.5.0
