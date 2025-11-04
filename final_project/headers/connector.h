@@ -4,10 +4,3 @@ void earthSensor(void);         //analog
 void rgbSensor(void);           //i2c3
 void temperatureSensor(void);   //i2c2
 void gpsSensor(void);           //UART
-
-i2c_read(1,2,3)
-{
-    read(1)
-    write(2)
-    submit(3)
-}

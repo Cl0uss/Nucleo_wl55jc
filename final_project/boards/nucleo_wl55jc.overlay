@@ -4,3 +4,10 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&usart1 {
+    status = "okay";
+    current-speed = <9600>;
+    pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+    pinctrl-names = "default";
+};
