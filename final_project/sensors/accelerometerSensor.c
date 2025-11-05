@@ -1,4 +1,5 @@
 #include "connector.h"
+#include "accelerometerSensor.h"
 
 
 

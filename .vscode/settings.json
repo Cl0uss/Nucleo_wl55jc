@@ -1,5 +1,10 @@
 {
     "files.associations": {
-        "gps.C": "cpp"
+        "gps.C": "cpp",
+        "connector.h": "c",
+        "stats.h": "c",
+        "gpssensor.h": "c",
+        "uart.h": "c",
+        "arch_interface.h": "c"
     }
 }
