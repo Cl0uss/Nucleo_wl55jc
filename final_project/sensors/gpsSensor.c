@@ -8,10 +8,9 @@
 static char rx_buf[RX_BUF_SIZE];
 static int rx_pos = 0;
 
-void gpsSensor(void)
-{
-    /* берём именно USART1 (PB6/PB7, 9600) локальной переменной */
-    const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
+
+void process(void) {
+        const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
 
     k_sleep(K_MSEC(300));  // дать ядру поднять драйвер
 
@@ -29,10 +28,15 @@ void gpsSensor(void)
                 rx_buf[rx_pos] = '\0';
                 printk("%s\n", rx_buf);
                 rx_pos = 0;
-            } else {
+            } 
+            else {
                 rx_buf[rx_pos++] = c;
             }
         }
         k_sleep(K_MSEC(5));
     }
+}
+void gpsSensor(void)
+{
+    process();
 }
