@@ -24,7 +24,7 @@ void main(void)
     k_thread_suspend(uartThread);
     k_thread_suspend(i2cThread);
     k_thread_suspend(analogThread);
-    k_thread_resume(analogThread);
+    k_thread_resume(uartThread);
     while (1) { 
         k_msleep(1000); 
     }

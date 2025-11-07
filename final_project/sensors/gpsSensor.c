@@ -10,7 +10,7 @@ static int rx_pos = 0;
 
 
 void process(void) {
-        const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
+    const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
 
     k_sleep(K_MSEC(300));  // дать ядру поднять драйвер
 
@@ -18,6 +18,16 @@ void process(void) {
         printk("USART1 not ready\n");
         return;
     }
+
+    struct uart_config cfg = {
+    .baudrate = 9600,
+    .parity = UART_CFG_PARITY_NONE,
+    .stop_bits = UART_CFG_STOP_BITS_1,
+    .data_bits = UART_CFG_DATA_BITS_8,
+    .flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
+};
+
+    uart_configure(dev, &cfg);
 
     printk("USART1 ready, reading...\n");
 
