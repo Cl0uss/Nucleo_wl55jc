@@ -8,9 +8,9 @@
 static char rx_buf[RX_BUF_SIZE];
 static int rx_pos = 0;
 
-
-void process(void) {
-    const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
+void gpsSensor(void)
+{
+        const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(usart1));
 
     k_sleep(K_MSEC(300));  // дать ядру поднять драйвер
 
@@ -45,8 +45,4 @@ void process(void) {
         }
         k_sleep(K_MSEC(5));
     }
-}
-void gpsSensor(void)
-{
-    process();
 }

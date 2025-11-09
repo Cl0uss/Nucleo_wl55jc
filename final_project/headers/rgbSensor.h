@@ -1,0 +1,12 @@
+#define rgbAddr 0x29
+#define rgbCommandBit 0x80
+#define rgbEnable 0x00
+#define rgbEnablePon 0x01
+#define rgbEnableAen 0x02
+#define rgbAtime 0x01
+#define rgbControl 0x0F
+#define rgbWaitTime 0x03
+#define rgbWaitValue 0xAB
+#define rgbRdata 0x16
+#define rgbGdata 0x18
+#define rgbBdata 0x1A

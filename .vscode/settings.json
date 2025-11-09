@@ -5,6 +5,15 @@
         "stats.h": "c",
         "gpssensor.h": "c",
         "uart.h": "c",
-        "arch_interface.h": "c"
+        "arch_interface.h": "c",
+        "compare": "c",
+        "cstdint": "c",
+        "gpio.h": "c",
+        "device.h": "c",
+        "i2c.h": "c",
+        "kernel.h": "c",
+        "rgbsensor.h": "c",
+        "temperaturesensor.h": "c",
+        "limits": "c"
     }
 }

@@ -1,3 +1,13 @@
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/arch/arch_interface.h>
+#include <zephyr/kernel/stats.h>
+#include <stdio.h>
+#include <math.h>
+
 void accelerometerSensor(); //i2c2
 void brightnessSensor();    //analog 
 void earthSensor();         //analog
@@ -7,10 +17,5 @@ void gpsSensor();           //UART
 
 
 
-#define STACKSIZE 2048
-
-
-enum Mode {TEST, NORMAL, ADVANCED};
-extern enum Mode mode;
-extern const struct device *i2c2;
+extern const struct device *i2c;
 
