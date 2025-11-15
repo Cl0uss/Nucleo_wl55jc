@@ -1,0 +1,18 @@
+/ {
+    zephyr,console = &lpuart1;
+    zephyr,shell-uart = &lpuart1;
+    zephyr,uart-mcumgr = &lpuart1;
+};
+
+&lpuart1 {
+    status = "okay";
+    current-speed = <115200>;
+};
+
+/* GPS UART = USART1 on PB6 (TX) and PB7 (RX) */
+&usart1 {
+    status = "okay";
+    current-speed = <9600>;
+    pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+    pinctrl-names = "default";
+};

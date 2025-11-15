@@ -7,4 +7,5 @@ target_sources(app PRIVATE
         measures/rgb.c
         measures/accelerometer.c
         measures/temperature.c
+        measures/gps.c
         )

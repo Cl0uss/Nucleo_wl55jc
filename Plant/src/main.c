@@ -1,6 +1,7 @@
 #include "connector.h"
 
 const struct device *i2c;
+const struct device *uart;
 uint8_t registers[2];
 
 enum Mode {TEST, NORMAL, ADVANCED};
@@ -36,28 +37,38 @@ void accelerometerInit(){
 
 }
 
-void gpsInit(){
-    return;
-}
-
 void measures(){
     //rgbMeasure();
     //accelerometerMeasure();
-    temperatureMeasure();
+    //temperatureMeasure();
+    gpsMeasure();
 }
 
 K_THREAD_DEFINE(measureThread,4096,measures,NULL,NULL,NULL,1,0,0);
+
 void main(void) {
+    
     k_thread_suspend(measureThread);
+
     i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));
     if (!device_is_ready(i2c)) {
-        printk("i2c2 not ready");
+        printk("i2c not ready");
+        return;
     }
+
+    uart = DEVICE_DT_GET(DT_NODELABEL(usart1));
+    printk("UART dev: %p, ready: %d\n", uart, device_is_ready(uart));
+    if (!device_is_ready(uart)){
+        printk("uart not ready");
+        return;
+    }
+
     rgbInit();
     accelerometerInit();
     k_thread_resume(measureThread);
+
     while (true){
-        k_msleep(100);
+        k_msleep(10000);
     }
 
 
