@@ -8,4 +8,5 @@ target_sources(app PRIVATE
         measures/accelerometer.c
         measures/temperature.c
         measures/gps.c
+        measures/soil.c
         )

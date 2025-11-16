@@ -11,7 +11,6 @@ uint16_t green;
 uint16_t blue;
 
 void rgbMeasure () {
-        while (true){
         i2c_write_read(i2c,rgbAddr,&redAddr,1,&rgbData,2);
         red = ((uint16_t)rgbData[1] << 8) | rgbData[0];
 
@@ -22,10 +21,8 @@ void rgbMeasure () {
         blue = ((uint16_t)rgbData[1] << 8) | rgbData[0];
 
         printk("\r\033[Kred - %u\tgreen - %u\tblue - %u", red,green,blue);
-        k_msleep(500);
 }
 
-}
 
 
 /*  --- to read all colors + clear ---

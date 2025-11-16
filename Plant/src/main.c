@@ -2,11 +2,38 @@
 
 const struct device *i2c;
 const struct device *uart;
+const struct device *adc;
+
 uint8_t registers[2];
 
 enum Mode {TEST, NORMAL, ADVANCED};
 
+void i2cInit() {
 
+    i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));
+    if (!device_is_ready(i2c)) {
+        printk("i2c not ready\n");
+        return;
+    }
+}
+
+void uartInit() {
+
+    uart = DEVICE_DT_GET(DT_NODELABEL(usart1));
+    if (!device_is_ready(uart)){
+        printk("uart not ready\n");
+        return;
+    }
+}
+
+void adcInit() {
+
+    adc = DEVICE_DT_GET(DT_NODELABEL(adc1));
+    if (!device_is_ready(adc)) {
+        printk("adc not ready\n");
+        return;
+    }
+}
 
 void registersInput(uint8_t first, uint8_t second) {
     
@@ -37,11 +64,26 @@ void accelerometerInit(){
 
 }
 
+
+
 void measures(){
-    //rgbMeasure();
-    //accelerometerMeasure();
-    //temperatureMeasure();
+    while (true){
+    rgbMeasure();
+    k_msleep(5000);
+
+    accelerometerMeasure();
+    k_msleep(5000);
+
+    temperatureMeasure();
+    k_msleep(5000);
+
     gpsMeasure();
+    k_msleep(5000);
+
+    soilMeasure();
+    k_msleep(5000);
+
+    }
 }
 
 K_THREAD_DEFINE(measureThread,4096,measures,NULL,NULL,NULL,1,0,0);
@@ -50,19 +92,9 @@ void main(void) {
     
     k_thread_suspend(measureThread);
 
-    i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));
-    if (!device_is_ready(i2c)) {
-        printk("i2c not ready");
-        return;
-    }
-
-    uart = DEVICE_DT_GET(DT_NODELABEL(usart1));
-    printk("UART dev: %p, ready: %d\n", uart, device_is_ready(uart));
-    if (!device_is_ready(uart)){
-        printk("uart not ready");
-        return;
-    }
-
+    i2cInit();
+    uartInit();
+    adcInit();
     rgbInit();
     accelerometerInit();
     k_thread_resume(measureThread);

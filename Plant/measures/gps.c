@@ -5,7 +5,6 @@ static int nmeaPos = 0;
 static uint8_t rxByte;
 
 void gpsMeasure(){
-    while (true){
     while (uart_poll_in(uart, &rxByte) == 0) {
 
         if (rxByte == '\n') {
@@ -16,5 +15,4 @@ void gpsMeasure(){
         else if (nmeaPos < sizeof(nmeaBuff) - 1) nmeaBuff[nmeaPos++] = rxByte;
 
     }
-}
 }
