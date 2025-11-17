@@ -6,6 +6,10 @@ const struct device *adc;
 
 uint8_t registers[2];
 
+int16_t soilRawVal;
+struct adc_channel_cfg soilCfg;
+struct adc_sequence seq;
+
 enum Mode {TEST, NORMAL, ADVANCED};
 
 void i2cInit() {
@@ -27,12 +31,38 @@ void uartInit() {
 }
 
 void adcInit() {
+    soilRawVal = 0;
 
     adc = DEVICE_DT_GET(DT_NODELABEL(adc1));
     if (!device_is_ready(adc)) {
         printk("adc not ready\n");
         return;
     }
+
+     soilCfg = (struct adc_channel_cfg){
+        .gain             = ADC_GAIN_1,
+        .reference        = ADC_REF_INTERNAL,
+        .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+        .channel_id       = soilAdcChannel,
+        .differential     = 0,
+    };
+
+    int err = adc_channel_setup(adc, &soilCfg);
+    if (err < 0) {
+        printk("adc_channel_setup error: %d\n", err);
+        return;
+    }
+
+    seq = (struct adc_sequence){
+    .channels    = BIT(soilAdcChannel),
+    .buffer      = &soilRawVal,
+    .buffer_size = sizeof(soilRawVal),
+    .resolution  = adcRes,          
+    };
+
+
+
+
 }
 
 void registersInput(uint8_t first, uint8_t second) {
@@ -64,24 +94,22 @@ void accelerometerInit(){
 
 }
 
-
-
 void measures(){
     while (true){
-    rgbMeasure();
-    k_msleep(5000);
+    // rgbMeasure();
+    // k_msleep(5000);
 
-    accelerometerMeasure();
-    k_msleep(5000);
+    // accelerometerMeasure();
+    // k_msleep(5000);
 
-    temperatureMeasure();
-    k_msleep(5000);
+    // temperatureMeasure();
+    // k_msleep(5000);
 
-    gpsMeasure();
-    k_msleep(5000);
+    // gpsMeasure();
+    // k_msleep(5000);
 
     soilMeasure();
-    k_msleep(5000);
+    k_msleep(500);
 
     }
 }

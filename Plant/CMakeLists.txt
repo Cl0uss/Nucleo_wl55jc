@@ -9,4 +9,5 @@ target_sources(app PRIVATE
         measures/temperature.c
         measures/gps.c
         measures/soil.c
+        measures/brightness.c
         )

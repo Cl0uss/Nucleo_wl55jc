@@ -13,10 +13,15 @@
 #define accAddr 0x1D
 #define tempAndHumidAddr 0x40
 #define adcRes 12
+#define soilAdcChannel 0  
+
 
 extern const struct device *adc;
 extern const struct device *i2c;
 extern const struct device *uart;
+extern struct adc_channel_cfg soilCfg;
+extern struct adc_sequence seq;
+extern int16_t soilRawVal;
 
 
 void rgbMeasure(void);
@@ -24,3 +29,4 @@ void accelerometerMeasure(void);
 void temperatureMeasure(void);
 void gpsMeasure(void);
 void soilMeasure(void);
+void brightnessMeasure(void);
