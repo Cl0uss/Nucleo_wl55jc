@@ -1,5 +1,10 @@
 #include "connector.h"
 
+
+const struct gpio_dt_spec led_r = GPIO_DT_SPEC_GET(DT_ALIAS(ledr), gpios);
+const struct gpio_dt_spec led_g = GPIO_DT_SPEC_GET(DT_ALIAS(ledg), gpios);
+const struct gpio_dt_spec led_b = GPIO_DT_SPEC_GET(DT_ALIAS(ledb), gpios);
+
 const struct device *i2c;
 const struct device *uart;
 const struct device *adc;
@@ -11,6 +16,19 @@ struct adc_channel_cfg soilCfg;
 struct adc_sequence seq;
 
 enum Mode {TEST, NORMAL, ADVANCED};
+
+void rgbLedInit() {
+    if (!device_is_ready(led_r.port) ||
+        !device_is_ready(led_g.port) ||
+        !device_is_ready(led_b.port)) {
+        printk("LED ports not ready\n");
+        return;
+    }
+
+    gpio_pin_configure_dt(&led_r, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&led_g, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&led_b, GPIO_OUTPUT_ACTIVE);
+}
 
 void i2cInit() {
 
@@ -96,21 +114,17 @@ void accelerometerInit(){
 
 void measures(){
     while (true){
-    // rgbMeasure();
-    // k_msleep(5000);
+    //rgbMeasure();
 
-    // accelerometerMeasure();
-    // k_msleep(5000);
+    //accelerometerMeasure();
 
-    // temperatureMeasure();
-    // k_msleep(5000);
+    //temperatureMeasure();
 
-    // gpsMeasure();
-    // k_msleep(5000);
+    //soilMeasure();
 
-    soilMeasure();
-    k_msleep(500);
+    //gpsMeasure();
 
+    k_msleep(2000);
     }
 }
 
@@ -120,15 +134,20 @@ void main(void) {
     
     k_thread_suspend(measureThread);
 
+    rgbLedInit();
     i2cInit();
     uartInit();
     adcInit();
     rgbInit();
     accelerometerInit();
-    k_thread_resume(measureThread);
+    //k_thread_resume(measureThread);
+    int a=1;
 
     while (true){
-        k_msleep(10000);
+        if (a>3) a=1;
+        rgbChange(a);
+        a+=1;
+        k_msleep(2000);
     }
 
 

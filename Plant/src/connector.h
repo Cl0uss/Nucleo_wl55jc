@@ -15,6 +15,9 @@
 #define adcRes 12
 #define soilAdcChannel 0  
 
+extern const struct gpio_dt_spec led_r;
+extern const struct gpio_dt_spec led_g;
+extern const struct gpio_dt_spec led_b;
 
 extern const struct device *adc;
 extern const struct device *i2c;
@@ -23,7 +26,7 @@ extern struct adc_channel_cfg soilCfg;
 extern struct adc_sequence seq;
 extern int16_t soilRawVal;
 
-
+void rgbChange(int);
 void rgbMeasure(void);
 void accelerometerMeasure(void);
 void temperatureMeasure(void);

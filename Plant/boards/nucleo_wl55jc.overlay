@@ -2,14 +2,45 @@
     zephyr,console = &lpuart1;
     zephyr,shell-uart = &lpuart1;
     zephyr,uart-mcumgr = &lpuart1;
+
+    /* ===== RGB LED (GPIO-based, common-anode, ACTIVE_LOW) ===== */
+    leds {
+        compatible = "gpio-leds";
+
+        /* RED: CN9.D5 = PB8 */
+        led_r: led_r {
+            gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+            label = "LED_R";
+        };
+
+        /* GREEN: CN9.D6 = PB10 */
+        led_g: led_g {
+            gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+            label = "LED_G";
+        };
+
+        /* BLUE: CN5.D9 = PA9 */
+        led_b: led_b {
+            gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+            label = "LED_B";
+        };
+    };
+
+    /* Aliases for C code */
+    aliases {
+        ledr = &led_r;
+        ledg = &led_g;
+        ledb = &led_b;
+    };
 };
 
+/* ===== Console UART ===== */
 &lpuart1 {
     status = "okay";
     current-speed = <115200>;
 };
 
-/* GPS UART = USART1 on PB6 (TX) and PB7 (RX) */
+/* ===== GPS UART ===== */
 &usart1 {
     status = "okay";
     current-speed = <9600>;

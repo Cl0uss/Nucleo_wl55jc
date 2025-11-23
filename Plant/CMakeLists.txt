@@ -4,6 +4,7 @@ project(mma8451_test)
 
 target_sources(app PRIVATE 
         src/main.c
+        src/rgbChange.c
         measures/rgb.c
         measures/accelerometer.c
         measures/temperature.c
