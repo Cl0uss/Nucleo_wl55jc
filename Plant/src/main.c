@@ -15,6 +15,11 @@ int16_t soilRawVal;
 struct adc_channel_cfg soilCfg;
 struct adc_sequence seq;
 
+int16_t brightnessRawVal;
+struct adc_channel_cfg brightnessCfg;
+struct adc_sequence brightnessSeq;
+
+
 enum Mode {TEST, NORMAL, ADVANCED};
 
 void rgbLedInit() {
@@ -25,9 +30,9 @@ void rgbLedInit() {
         return;
     }
 
-    gpio_pin_configure_dt(&led_r, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_configure_dt(&led_g, GPIO_OUTPUT_ACTIVE);
-    gpio_pin_configure_dt(&led_b, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&led_r, GPIO_OUTPUT_INACTIVE);
+    gpio_pin_configure_dt(&led_g, GPIO_OUTPUT_INACTIVE);
+    gpio_pin_configure_dt(&led_b, GPIO_OUTPUT_INACTIVE);
 }
 
 void i2cInit() {
@@ -79,7 +84,28 @@ void adcInit() {
     };
 
 
+    brightnessRawVal = 0;
 
+    brightnessCfg = (struct adc_channel_cfg){
+        .gain             = ADC_GAIN_1,
+        .reference        = ADC_REF_INTERNAL,
+        .acquisition_time = ADC_ACQ_TIME_DEFAULT,
+        .channel_id       = brightAdcChannel,
+        .differential     = 0,
+    };
+
+    err = adc_channel_setup(adc, &brightnessCfg);
+    if (err < 0) {
+        printk("adc_channel_setup brightness error: %d\n", err);
+        return;
+    }
+
+    brightnessSeq = (struct adc_sequence){
+        .channels    = BIT(brightAdcChannel),
+        .buffer      = &brightnessRawVal,
+        .buffer_size = sizeof(brightnessRawVal),
+        .resolution  = adcRes,
+    };
 
 }
 
@@ -114,17 +140,20 @@ void accelerometerInit(){
 
 void measures(){
     while (true){
-    //rgbMeasure();
+        brightnessMeasure();
 
-    //accelerometerMeasure();
+        //rgbMeasure();
 
-    //temperatureMeasure();
+        //accelerometerMeasure();
 
-    //soilMeasure();
+        //temperatureMeasure();
 
-    //gpsMeasure();
+        //soilMeasure();
+        
 
-    k_msleep(2000);
+        //gpsMeasure();
+
+        k_msleep(2000);
     }
 }
 
@@ -140,13 +169,10 @@ void main(void) {
     adcInit();
     rgbInit();
     accelerometerInit();
-    //k_thread_resume(measureThread);
-    int a=1;
+    k_thread_resume(measureThread);
 
     while (true){
-        if (a>3) a=1;
-        rgbChange(a);
-        a+=1;
+
         k_msleep(2000);
     }
 

@@ -13,7 +13,8 @@
 #define accAddr 0x1D
 #define tempAndHumidAddr 0x40
 #define adcRes 12
-#define soilAdcChannel 0  
+#define soilAdcChannel 0
+#define brightAdcChannel 5 
 
 extern const struct gpio_dt_spec led_r;
 extern const struct gpio_dt_spec led_g;
@@ -22,9 +23,14 @@ extern const struct gpio_dt_spec led_b;
 extern const struct device *adc;
 extern const struct device *i2c;
 extern const struct device *uart;
+
 extern struct adc_channel_cfg soilCfg;
 extern struct adc_sequence seq;
 extern int16_t soilRawVal;
+
+extern struct adc_channel_cfg brightnessCfg;
+extern struct adc_sequence brightnessSeq;
+extern int16_t brightnessRawVal;
 
 void rgbChange(int);
 void rgbMeasure(void);
