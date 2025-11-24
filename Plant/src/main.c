@@ -140,7 +140,7 @@ void accelerometerInit(){
 
 void measures(){
     while (true){
-        brightnessMeasure();
+        //brightnessMeasure();
 
         //rgbMeasure();
 
@@ -150,8 +150,8 @@ void measures(){
 
         //soilMeasure();
         
-
-        //gpsMeasure();
+        printk("\nhere!\n");
+        gpsMeasure();
 
         k_msleep(2000);
     }
