@@ -5,6 +5,7 @@ static int nmeaPos = 0;
 static uint8_t rxByte;
 
 void gpsMeasure(void) {
+    here:
     bool gpsReady = false;
     while (!gpsReady) {
         while (uart_poll_in(uart, &rxByte) == 0) {
@@ -20,10 +21,11 @@ void gpsMeasure(void) {
 
                 int err = k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
                 gpsReady = true;
-                nmeaPos = 0;
+                nmeaPos = 0;    
             } 
             else if (nmeaPos < sizeof(nmeaBuff) - 1) nmeaBuff[nmeaPos++] = rxByte;
             
         }
     }
+    goto here;
 }
