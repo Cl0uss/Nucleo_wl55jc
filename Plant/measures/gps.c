@@ -7,7 +7,7 @@ static uint8_t rxByte;
 void gpsMeasure(void) {
     here:
     bool gpsReady = false;
-    while (!gpsReady) {
+    while (!gpsReady && permission) {
         while (uart_poll_in(uart, &rxByte) == 0) {
             if (rxByte == '\r') continue;
             else if (rxByte == '\n') {
@@ -21,6 +21,7 @@ void gpsMeasure(void) {
 
                 int err = k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
                 gpsReady = true;
+                permission = false;
                 nmeaPos = 0;    
             } 
             else if (nmeaPos < sizeof(nmeaBuff) - 1) nmeaBuff[nmeaPos++] = rxByte;

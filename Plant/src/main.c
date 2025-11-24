@@ -13,17 +13,19 @@ const struct device *adc;
 
 struct measDataQueue m;
 
+bool permission = true;
 
+// =================== NORMAL MODE ===================
 struct {
     int minimumVal;
-    int sumForMean;
+    float sumForMean;
     int meanVal;
     int maximumVal;
 } tempNormalMode = { 0 };
 
 struct {
     int minimumVal;
-    int sumForMean;
+    float sumForMean;
     int meanVal;
     int maximumVal;
 } humidityNormalMode = { 0 };
@@ -41,6 +43,10 @@ struct {
     int meanVal;
     int maximumVal;
 } soilNormalMode = { 0 };
+
+int rgbDominant[3] = {0};
+
+// =================== NORMAL MODE FINISHED ===================
 
 uint8_t registers[2];
 
@@ -157,12 +163,12 @@ void accelerometerInit(){
 
 }
 
-
 void manageQueue() {
 
     while (k_msgq_get(&messageQueue, &m, K_NO_WAIT) == 0) {
-            switch (m.type) {
 
+            switch (m.type) {
+                
             case soilDataQ:
                 printk("Soil: %d\n", m.d.soilQ);
                 break;
@@ -177,6 +183,11 @@ void manageQueue() {
                     else if (m.d.rgbQ.g > m.d.rgbQ.r && m.d.rgbQ.g > m.d.rgbQ.b ) rgbChange(2);
                     else rgbChange(3);
                 }
+                else if ( mode == NORMAL){
+                    if (m.d.rgbQ.r > m.d.rgbQ.g && m.d.rgbQ.r > m.d.rgbQ.b) rgbDominant[0]+=1;
+                    else if (m.d.rgbQ.g > m.d.rgbQ.r && m.d.rgbQ.g > m.d.rgbQ.b ) rgbDominant[1]+=1;
+                    else rgbDominant[2]+=1;
+                }
                 printk("RGB: R=%u G=%u B=%u\n",
                     m.d.rgbQ.r, m.d.rgbQ.g, m.d.rgbQ.b);
                 break;
@@ -187,18 +198,27 @@ void manageQueue() {
                 break;
 
             case tempDataQ:
+                if (mode == NORMAL) {
+                    tempNormalMode.sumForMean += m.d.tempQ.temp;
+                    if (tempNormalMode.maximumVal < m.d.tempQ.temp) tempNormalMode.maximumVal = m.d.tempQ.temp;
+                    else if (tempNormalMode.minimumVal > m.d.tempQ.temp) tempNormalMode.minimumVal = m.d.tempQ.temp;
+
+                    humidityNormalMode.sumForMean += m.d.tempQ.hum;
+                    if (humidityNormalMode.maximumVal < m.d.tempQ.hum) humidityNormalMode.maximumVal = m.d.tempQ.hum;
+                    else if (humidityNormalMode.minimumVal > m.d.tempQ.hum) humidityNormalMode.minimumVal = m.d.tempQ.hum;
+                }
                 printk("Temp: %.2f C  Hum: %.2f %%\n",
                     m.d.tempQ.temp, m.d.tempQ.hum);
                 break;
 
             case gpsDataQ:
-                printk("GPS: %s\n\n", m.d.gpsQ);
+                printk("GPS: %s\n", m.d.gpsQ);
                 break;
-
             default:
                 break;
             }
         }
+        printk("\n\n");
 }
 
 K_THREAD_DEFINE(gpsThread,512,gpsMeasure,NULL,NULL,NULL,1,0,0);
@@ -215,10 +235,12 @@ void measures(){
 
     soilMeasure();
     
-    manageQueue();            
+    while (permission) k_msleep(1);
+
+    manageQueue();
+
+    permission = true;          
 }
-
-
 
 void testSensors() {
 
@@ -272,6 +294,32 @@ void testSensors() {
 }
 }
 
+void everyHourNormalMode (int quantity) {
+    // NM3
+    tempNormalMode.meanVal = tempNormalMode.sumForMean / quantity;  //logic done
+    humidityNormalMode.meanVal = humidityNormalMode.sumForMean / quantity;  //logic done
+    lightNormalMode.meanVal = lightNormalMode.sumForMean / quantity;
+    soilNormalMode.meanVal = soilNormalMode.sumForMean / quantity;
+    
+    // send logic
+    tempNormalMode.meanVal = 0;
+    humidityNormalMode.meanVal = 0;
+    lightNormalMode.meanVal = 0;
+    soilNormalMode.meanVal = 0;
+
+    // NM4
+    if (rgbDominant[0] > rgbDominant[1] && rgbDominant[0] > rgbDominant[2]) printk("RED");
+    if (rgbDominant[1] > rgbDominant[0] && rgbDominant[1] > rgbDominant[2]) printk("GREEN");
+    if (rgbDominant[2] > rgbDominant[1] && rgbDominant[2] > rgbDominant[0]) printk("BLUE");
+    
+    //send logic
+    rgbDominant[0] = 0;
+    rgbDominant[1] = 0;
+    rgbDominant[2] = 0;
+
+    //NM5
+}
+
 void main(void) {
 
     rgbLedInit();
@@ -310,19 +358,16 @@ void main(void) {
                 gpio_pin_set_dt(&redLed,0);
                 gpio_pin_set_dt(&greenLed,1);
 
-                int64_t startTimer = k_uptime_get();
                 int quantity = 0;
                 int64_t startHourTimer = k_uptime_get();
                 while (mode == NORMAL) {
                     measures();
+                    quantity++;
                     if (k_uptime_get - startHourTimer >= 3600 * MSEC_PER_SEC) {
-                        tempNormalMode.meanVal = tempNormalMode.sumForMean / quantity;
-                        humidityNormalMode.meanVal = humidityNormalMode.sumForMean / quantity;
-                        lightNormalMode.meanVal = lightNormalMode.sumForMean / quantity;
-                        soilNormalMode.meanVal = soilNormalMode.sumForMean / quantity;
+                        everyHourNormalMode(quantity);
                         startHourTimer = k_uptime_get();
                     } 
-                    while (k_uptime_get() - startTimer < 30 * MSEC_PER_SEC) k_msleep(250);
+                    k_msleep(30);
                 }
             }
 

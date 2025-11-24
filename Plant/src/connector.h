@@ -33,6 +33,8 @@ extern struct adc_channel_cfg brightnessCfg;
 extern struct adc_sequence brightnessSeq;
 extern int16_t brightnessRawVal;
 
+extern bool permission;
+
 enum measType {
     soilDataQ,
     lightDataQ,
