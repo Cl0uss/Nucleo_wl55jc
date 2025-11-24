@@ -20,7 +20,9 @@ void rgbMeasure () {
         i2c_write_read(i2c,rgbAddr,&blueAddr,1,&rgbData,2);
         blue = ((uint16_t)rgbData[1] << 8) | rgbData[0];
 
-        printk("\r\033[Kred - %u\tgreen - %u\tblue - %u", red,green,blue);
+        struct measDataQueue msg = { .type = rgbDataQ, .d.rgbQ = {.r = red, .g = green, .b = blue} };
+        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
+        
 }
 
 

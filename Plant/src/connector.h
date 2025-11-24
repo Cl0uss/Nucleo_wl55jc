@@ -8,6 +8,7 @@
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/adc.h>
+#include <math.h> 
 
 #define rgbAddr 0x29  
 #define accAddr 0x1D
@@ -31,6 +32,29 @@ extern int16_t soilRawVal;
 extern struct adc_channel_cfg brightnessCfg;
 extern struct adc_sequence brightnessSeq;
 extern int16_t brightnessRawVal;
+
+enum measType {
+    soilDataQ,
+    lightDataQ,
+    rgbDataQ,
+    accDataQ,
+    tempDataQ,
+    gpsDataQ
+};
+
+struct measDataQueue {
+    enum measType type;
+    union {
+        int16_t soilQ;
+        int16_t lightQ;
+        struct { uint16_t r,g,b; } rgbQ;
+        struct { float x,y,z; } accQ;
+        struct { float temp, hum; } tempQ;
+        char gpsQ[128];
+    } d;
+};
+
+extern struct k_msgq messageQueue;
 
 void rgbChange(int);
 void rgbMeasure(void);

@@ -1,5 +1,5 @@
 #include "connector.h"
-
+#define nucleoLed DT_ALIAS(led2)
 
 const struct gpio_dt_spec led_r = GPIO_DT_SPEC_GET(DT_ALIAS(ledr), gpios);
 const struct gpio_dt_spec led_g = GPIO_DT_SPEC_GET(DT_ALIAS(ledg), gpios);
@@ -21,6 +21,11 @@ struct adc_sequence brightnessSeq;
 
 
 enum Mode {TEST, NORMAL, ADVANCED};
+enum Mode mode = TEST;
+
+K_MSGQ_DEFINE(messageQueue, sizeof(struct measDataQueue), 8, 4);
+
+bool measureTime = false;
 
 void rgbLedInit() {
     if (!device_is_ready(led_r.port) ||
@@ -137,31 +142,66 @@ void accelerometerInit(){
     i2c_write(i2c,registers,sizeof(registers),accAddr);
 
 }
-
 void measures(){
-    while (true){
-        //brightnessMeasure();
+    here:
+    while (measureTime){
+        brightnessMeasure();
 
-        //rgbMeasure();
+        rgbMeasure();
 
-        //accelerometerMeasure();
+        accelerometerMeasure();
 
-        //temperatureMeasure();
+        temperatureMeasure();
 
-        //soilMeasure();
+        soilMeasure();
         
-        printk("\nhere!\n");
         gpsMeasure();
+        struct measDataQueue m;
 
-        k_msleep(2000);
+    while (k_msgq_get(&messageQueue, &m, K_NO_WAIT) == 0) {
+        switch (m.type) {
+        case soilDataQ:
+            printk("Soil: %d\n", m.d.soilQ);
+            break;
+        case lightDataQ:
+            printk("Light: %d\n", m.d.lightQ);
+            break;
+        case rgbDataQ:
+            if ( mode == TEST ){
+                if (m.d.rgbQ.r > m.d.rgbQ.g && m.d.rgbQ.r > m.d.rgbQ.b) rgbChange(1);
+                else if (m.d.rgbQ.g > m.d.rgbQ.r && m.d.rgbQ.g > m.d.rgbQ.b ) rgbChange(2);
+                else rgbChange(3);
+            }
+            printk("RGB: R=%u G=%u B=%u\n",
+                m.d.rgbQ.r, m.d.rgbQ.g, m.d.rgbQ.b);
+            break;
+        case accDataQ:
+            printk("Acc: X=%.2f Y=%.2f Z=%.2f\n",
+                m.d.accQ.x, m.d.accQ.y, m.d.accQ.z);
+            break;
+        case tempDataQ:
+            printk("Temp: %.2f C  Hum: %.2f %%\n",
+                m.d.tempQ.temp, m.d.tempQ.hum);
+            break;
+        case gpsDataQ:
+            printk("GPS: %s\n\n", m.d.gpsQ);
+            break;
+        default:
+            break;
+        }
     }
+    measureTime = false;
+}
+    goto here;
+
 }
 
 K_THREAD_DEFINE(measureThread,4096,measures,NULL,NULL,NULL,1,0,0);
 
 void main(void) {
-    
+
     k_thread_suspend(measureThread);
+
 
     rgbLedInit();
     i2cInit();
@@ -171,9 +211,16 @@ void main(void) {
     accelerometerInit();
     k_thread_resume(measureThread);
 
-    while (true){
+    static const struct gpio_dt_spec blueLed = GPIO_DT_SPEC_GET(nucleoLed, gpios);
+    gpio_pin_configure_dt(&blueLed, GPIO_OUTPUT_INACTIVE);
 
-        k_msleep(2000);
+    while (true){
+        if (mode == TEST)
+        {
+            gpio_pin_set_dt(&blueLed,1);
+            k_msleep(2000);
+            measureTime = true;
+        } 
     }
 
 

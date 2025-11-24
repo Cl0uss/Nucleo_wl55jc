@@ -21,6 +21,9 @@ void temperatureMeasure(){
         temperature = (175.72f * (float)temperatureRaw) / 65536.0f - 46.85f;
         humidity = (125.0f * (float)humidityRaw) / 65536.0f - 6.0f; 
 
-         printk("\r\033[KTemp: %.2f°C, Humidity: %.2f%%", temperature, humidity);
-    
+        float t = roundf(temperature * 100.0f) / 100.0f;
+        float h = roundf(humidity * 100.0f) / 100.0f;
+
+        struct measDataQueue msg = { .type = tempDataQ, .d.tempQ = {.temp = t, .hum = h} };
+        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);    
 }

@@ -6,11 +6,10 @@ void soilMeasure(void)
 {
 
     int err = adc_read(adc, &seq);
-    if (err < 0) {
+    if (err != 0) {
         printk("adc_read error: %d\n", err);
     } else {
-        printk("Soil moisture raw: %d\n", soilRawVal);
+        struct measDataQueue msg = { .type = soilDataQ, .d.soilQ = soilRawVal };
+        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
     }
-
-    k_msleep(500);
 }

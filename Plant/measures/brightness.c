@@ -5,7 +5,7 @@ void brightnessMeasure(){
     if (err < 0) {
         printk("Brightness adc_read error: %d\n", err);
     } else {
-        printk("Brightness raw: %d\n", brightnessRawVal);
+        struct measDataQueue msg = { .type = lightDataQ, .d.lightQ = brightnessRawVal };
+        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
     }
-    k_msleep(500);
 }

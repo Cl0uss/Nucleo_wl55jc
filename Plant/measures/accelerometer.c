@@ -25,5 +25,6 @@ void accelerometerMeasure() {
         float yf = (float)y * 9.80665f / 4096.0f;
         float zf = (float)z * 9.80665f / 4096.0f;
 
-        printk("\r\033[KX axis: %.2f m/s², Y axis: %.2f m/s², Z axis: %.2f m/s²",xf, yf, zf);
+        struct measDataQueue msg = { .type = accDataQ, .d.accQ = {.x = xf, .y = yf, .z =zf} };
+        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
 }
