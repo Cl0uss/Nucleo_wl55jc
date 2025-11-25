@@ -44,6 +44,15 @@ struct {
     int maximumVal;
 } soilNormalMode = { 0 };
 
+struct {
+    float xMaximum;
+    float xMinimum;
+    float yMaximum;
+    float yMinimum;
+    float zMaximum;
+    float zMinimum;
+} accNormalMode = { 0 };
+
 int rgbDominant[3] = {0};
 
 // =================== NORMAL MODE FINISHED ===================
@@ -193,6 +202,16 @@ void manageQueue() {
                 break;
 
             case accDataQ:
+                    if (mode == NORMAL) {
+                        if (abs(m.d.accQ.x) > abs(accNormalMode.xMaximum)) accNormalMode.xMaximum = m.d.accQ.x;
+                        else if (abs(m.d.accQ.x) < abs(accNormalMode.xMinimum)) accNormalMode.xMaximum = m.d.accQ.x;
+
+                        if (abs(m.d.accQ.y) > abs(accNormalMode.yMaximum)) accNormalMode.yMaximum = m.d.accQ.y;
+                        else if (abs(m.d.accQ.y) < abs(accNormalMode.yMinimum)) accNormalMode.yMaximum = m.d.accQ.y;
+
+                        if (abs(m.d.accQ.z) > abs(accNormalMode.zMaximum)) accNormalMode.zMaximum = m.d.accQ.z;
+                        else if (abs(m.d.accQ.z) < abs(accNormalMode.zMinimum)) accNormalMode.zMaximum = m.d.accQ.z;
+                    }
                 printk("Acc: X=%.2f Y=%.2f Z=%.2f\n",
                     m.d.accQ.x, m.d.accQ.y, m.d.accQ.z);
                 break;
@@ -318,6 +337,9 @@ void everyHourNormalMode (int quantity) {
     rgbDominant[2] = 0;
 
     //NM5
+        //case waas written and now is send logic needed
+
+    
 }
 
 void main(void) {
@@ -337,6 +359,7 @@ void main(void) {
 
     static const struct gpio_dt_spec redLed = GPIO_DT_SPEC_GET(nucleoLedR, gpios);
     gpio_pin_configure_dt(&redLed, GPIO_OUTPUT_INACTIVE);
+    
 
         
         while (true) {
