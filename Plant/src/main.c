@@ -18,31 +18,31 @@ bool newStart = true;
 
 // =================== NORMAL MODE ===================
 struct {
-    int minimumVal;
+    float minimumVal;
     float sumForMean;
-    int meanVal;
-    int maximumVal;
+    float meanVal;
+    float maximumVal;
 } tempNormalMode = { 0 };
 
 struct {
-    int minimumVal;
+    float minimumVal;
     float sumForMean;
-    int meanVal;
-    int maximumVal;
+    float meanVal;
+    float maximumVal;
 } humidityNormalMode = { 0 };
 
 struct {
-    int minimumVal;
-    int sumForMean;
-    int meanVal;
-    int maximumVal;
+    float minimumVal;
+    float sumForMean;
+    float meanVal;
+    float maximumVal;
 } lightNormalMode = { 0 };
 
 struct {
-    int minimumVal;
-    int sumForMean;
-    int meanVal;
-    int maximumVal;
+    float minimumVal;
+    float sumForMean;
+    float meanVal;
+    float maximumVal;
 } soilNormalMode = { 0 };
 
 struct {
@@ -64,7 +64,7 @@ uint8_t registers[2];
 
 int16_t soilRawVal;
 struct adc_channel_cfg soilCfg;
-struct adc_sequence seq;
+struct adc_sequence soilSeq;
 
 int16_t brightnessRawVal;
 struct adc_channel_cfg brightnessCfg;
@@ -116,7 +116,7 @@ void adcInit() {
     soilError = adc_channel_setup(adc, &soilCfg);
 
 
-    seq = (struct adc_sequence){
+    soilSeq = (struct adc_sequence){
     .channels    = BIT(soilAdcChannel),
     .buffer      = &soilRawVal,
     .buffer_size = sizeof(soilRawVal),
@@ -193,7 +193,7 @@ void manageQueue() {
                         else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
                     }
                 }
-                printk("Soil: %d\n", m.d.soilQ);
+                printk("Soil: %.1f%%\n", m.d.soilQ);
                 break;
 
             case lightDataQ:
@@ -208,7 +208,7 @@ void manageQueue() {
                         else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
                     }
                 }
-                printk("Light: %d%%\n", m.d.lightQ);
+                printk("Light: %.1f%%\n", m.d.lightQ);
                 break;
 
             case rgbDataQ:
@@ -248,7 +248,7 @@ void manageQueue() {
                         if (abs(m.d.accQ.z) > abs(accNormalMode.zMaximum)) accNormalMode.zMaximum = m.d.accQ.z;
                         else if (abs(m.d.accQ.z) < abs(accNormalMode.zMinimum)) accNormalMode.zMinimum = m.d.accQ.z;
                     }
-                printk("Acc: X=%.2f Y=%.2f Z=%.2f\n",
+                printk("Acc: X_axis=%.2fm/s² Y_axis=%.2fm/s² Z_axis=%.2fm/s²\n",
                     m.d.accQ.x, m.d.accQ.y, m.d.accQ.z);
                 break;
 
@@ -272,7 +272,7 @@ void manageQueue() {
                         else if (humidityNormalMode.minimumVal > m.d.tempQ.hum) humidityNormalMode.minimumVal = m.d.tempQ.hum;
                     }
             }
-                printk("Temp: %.2f C  Hum: %.2f %%\n",
+                printk("Temp: %.1f°C  Hum: %.1f%%\n",
                     m.d.tempQ.temp, m.d.tempQ.hum);
                 break;
 
@@ -368,10 +368,10 @@ void everyHourNormalMode (int quantity) {
     lightNormalMode.meanVal = lightNormalMode.sumForMean / quantity;
     soilNormalMode.meanVal = soilNormalMode.sumForMean / quantity;
 
-    printk("\ttemperature minimum - %d\n\ttemperature mean - %d\n\ttemperature mean - %d\n\n",tempNormalMode.minimumVal,tempNormalMode.meanVal,tempNormalMode.maximumVal);
-    printk("\thumidity minimum - %d\n\thumidity mean - %d\n\thumidity mean - %d\n\n");
-    printk("\tlight minimum - %d\n\tlight mean - %d\n\tlight mean - %d\n\n");
-    printk("\tsoil minimum - %d\n\tsoil mean - %d\n\tsoil mean - %d\n\n");
+    printk("\ttemperature minimum - %.1f°C\n\ttemperature mean - %.1f°C\n\ttemperature maximum - %.1f°C\n\n",tempNormalMode.minimumVal,tempNormalMode.meanVal,tempNormalMode.maximumVal);
+    printk("\thumidity minimum - %.1f%%\n\thumidity mean - %.1f%%\n\thumidity maximum - %.1f%%\n\n",humidityNormalMode.minimumVal,humidityNormalMode.meanVal,humidityNormalMode.maximumVal);
+    printk("\tlight minimum - %.1f%%\n\tlight mean - %.1f%%\n\tlight maximum - %.1f%%\n\n",lightNormalMode.minimumVal,lightNormalMode.meanVal,lightNormalMode.maximumVal);
+    printk("\tsoil minimum - %.1f%%\n\tsoil mean - %.1f%%\n\tsoil maximum - %.1f%%\n",soilNormalMode.minimumVal,soilNormalMode.meanVal,soilNormalMode.maximumVal);
 
 
     tempNormalMode.sumForMean = 0;
@@ -380,16 +380,17 @@ void everyHourNormalMode (int quantity) {
     soilNormalMode.sumForMean = 0;
 
     // NM4
-    if (rgbDominant[0] > rgbDominant[1] && rgbDominant[0] > rgbDominant[2]) printk("RED was dominant color");
-    if (rgbDominant[1] > rgbDominant[0] && rgbDominant[1] > rgbDominant[2]) printk("GREEN was dominant color");
-    if (rgbDominant[2] > rgbDominant[1] && rgbDominant[2] > rgbDominant[0]) printk("BLUE was dominant color");
+    if (rgbDominant[0] > rgbDominant[1] && rgbDominant[0] > rgbDominant[2]) printk("RED was dominant color\n");
+    if (rgbDominant[1] > rgbDominant[0] && rgbDominant[1] > rgbDominant[2]) printk("GREEN was dominant color\n");
+    if (rgbDominant[2] > rgbDominant[1] && rgbDominant[2] > rgbDominant[0]) printk("BLUE was dominant color\n");
     
     rgbDominant[0] = 0;
     rgbDominant[1] = 0;
     rgbDominant[2] = 0;
 
     //NM5
-        //case waas written and now is send logic needed
+    printk("Minimum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n",accNormalMode.xMinimum,accNormalMode.yMinimum,accNormalMode.zMinimum);
+    printk("Maximum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n\n",accNormalMode.xMaximum,accNormalMode.yMaximum,accNormalMode.zMaximum);
     newStart = true;
     
 }
@@ -415,6 +416,7 @@ void main(void) {
         while (true) {
 
             if (mode == TEST) {
+                printk("TEST MODE\n");
                 testSensors();
                 gpio_pin_set_dt(&blueLed,1);
                 gpio_pin_set_dt(&redLed,0);
@@ -427,6 +429,7 @@ void main(void) {
             }
 
             if (mode == NORMAL) {
+                printk("NORMAL MODE\n");
                 newStart = true;
                 gpio_pin_set_dt(&blueLed,0);
                 gpio_pin_set_dt(&redLed,0);
@@ -437,11 +440,12 @@ void main(void) {
                 while (mode == NORMAL) {
                     measures();
                     quantity++;
-                    if (k_uptime_get - startHourTimer >= 3600 * MSEC_PER_SEC) {
+                    if (k_uptime_get() - startHourTimer >= 60 * MSEC_PER_SEC) {
                         everyHourNormalMode(quantity);
+                        quantity = 0;
                         startHourTimer = k_uptime_get();
                     } 
-                    k_msleep(30);
+                    k_msleep(10000);
                 }
             }
 

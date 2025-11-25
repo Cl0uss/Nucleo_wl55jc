@@ -26,7 +26,7 @@ extern const struct device *i2c;
 extern const struct device *uart;
 
 extern struct adc_channel_cfg soilCfg;
-extern struct adc_sequence seq;
+extern struct adc_sequence soilSeq;
 extern int16_t soilRawVal;
 
 extern struct adc_channel_cfg brightnessCfg;
@@ -47,8 +47,8 @@ enum measType {
 struct measDataQueue {
     enum measType type;
     union {
-        int16_t soilQ;
-        int16_t lightQ;
+        float soilQ;
+        float lightQ;
         struct { uint16_t r,g,b; } rgbQ;
         struct { float x,y,z; } accQ;
         struct { float temp, hum; } tempQ;
