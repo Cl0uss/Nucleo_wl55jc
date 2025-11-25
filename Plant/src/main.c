@@ -14,6 +14,7 @@ const struct device *adc;
 struct measDataQueue m;
 
 bool permission = true;
+bool newStart = true;
 
 // =================== NORMAL MODE ===================
 struct {
@@ -56,6 +57,8 @@ struct {
 int rgbDominant[3] = {0};
 
 // =================== NORMAL MODE FINISHED ===================
+
+
 
 uint8_t registers[2];
 
@@ -179,11 +182,33 @@ void manageQueue() {
             switch (m.type) {
                 
             case soilDataQ:
+                if (mode == NORMAL){
+                    soilNormalMode.sumForMean += m.d.soilQ;
+                    if (newStart) {
+                        soilNormalMode.maximumVal = m.d.soilQ;
+                        soilNormalMode.minimumVal = m.d.soilQ;
+                    }
+                    else {
+                        if (lightNormalMode.maximumVal < m.d.lightQ) lightNormalMode.maximumVal = m.d.lightQ;
+                        else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
+                    }
+                }
                 printk("Soil: %d\n", m.d.soilQ);
                 break;
 
             case lightDataQ:
-                printk("Light: %d\n", m.d.lightQ);
+                if (mode == NORMAL){
+                    lightNormalMode.sumForMean += m.d.lightQ;
+                    if (newStart) {
+                        lightNormalMode.maximumVal = m.d.lightQ;
+                        lightNormalMode.minimumVal = m.d.lightQ;
+                    }
+                    else {
+                        if (lightNormalMode.maximumVal < m.d.lightQ) lightNormalMode.maximumVal = m.d.lightQ;
+                        else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
+                    }
+                }
+                printk("Light: %d%%\n", m.d.lightQ);
                 break;
 
             case rgbDataQ:
@@ -203,14 +228,25 @@ void manageQueue() {
 
             case accDataQ:
                     if (mode == NORMAL) {
-                        if (abs(m.d.accQ.x) > abs(accNormalMode.xMaximum)) accNormalMode.xMaximum = m.d.accQ.x;
-                        else if (abs(m.d.accQ.x) < abs(accNormalMode.xMinimum)) accNormalMode.xMaximum = m.d.accQ.x;
+                        if (newStart) {
+                            accNormalMode.xMaximum = m.d.accQ.x;
+                            accNormalMode.xMinimum = m.d.accQ.x;
+
+                            accNormalMode.yMaximum = m.d.accQ.y;
+                            accNormalMode.yMinimum = m.d.accQ.y;
+                            
+                            accNormalMode.zMaximum = m.d.accQ.z;
+                            accNormalMode.zMinimum = m.d.accQ.z;
+                        }
+                        
+                        else if (abs(m.d.accQ.x) > abs(accNormalMode.xMaximum)) accNormalMode.xMaximum = m.d.accQ.x;
+                        else if (abs(m.d.accQ.x) < abs(accNormalMode.xMinimum)) accNormalMode.xMinimum = m.d.accQ.x;
 
                         if (abs(m.d.accQ.y) > abs(accNormalMode.yMaximum)) accNormalMode.yMaximum = m.d.accQ.y;
-                        else if (abs(m.d.accQ.y) < abs(accNormalMode.yMinimum)) accNormalMode.yMaximum = m.d.accQ.y;
+                        else if (abs(m.d.accQ.y) < abs(accNormalMode.yMinimum)) accNormalMode.yMinimum = m.d.accQ.y;
 
                         if (abs(m.d.accQ.z) > abs(accNormalMode.zMaximum)) accNormalMode.zMaximum = m.d.accQ.z;
-                        else if (abs(m.d.accQ.z) < abs(accNormalMode.zMinimum)) accNormalMode.zMaximum = m.d.accQ.z;
+                        else if (abs(m.d.accQ.z) < abs(accNormalMode.zMinimum)) accNormalMode.zMinimum = m.d.accQ.z;
                     }
                 printk("Acc: X=%.2f Y=%.2f Z=%.2f\n",
                     m.d.accQ.x, m.d.accQ.y, m.d.accQ.z);
@@ -219,13 +255,23 @@ void manageQueue() {
             case tempDataQ:
                 if (mode == NORMAL) {
                     tempNormalMode.sumForMean += m.d.tempQ.temp;
-                    if (tempNormalMode.maximumVal < m.d.tempQ.temp) tempNormalMode.maximumVal = m.d.tempQ.temp;
-                    else if (tempNormalMode.minimumVal > m.d.tempQ.temp) tempNormalMode.minimumVal = m.d.tempQ.temp;
-
                     humidityNormalMode.sumForMean += m.d.tempQ.hum;
-                    if (humidityNormalMode.maximumVal < m.d.tempQ.hum) humidityNormalMode.maximumVal = m.d.tempQ.hum;
-                    else if (humidityNormalMode.minimumVal > m.d.tempQ.hum) humidityNormalMode.minimumVal = m.d.tempQ.hum;
-                }
+
+                    if (newStart) {
+                        tempNormalMode.maximumVal = m.d.tempQ.temp;
+                        tempNormalMode.minimumVal = m.d.tempQ.temp;
+
+                        humidityNormalMode.maximumVal = m.d.tempQ.hum;
+                        humidityNormalMode.minimumVal = m.d.tempQ.hum;
+                    }
+                    else { 
+                        if (tempNormalMode.maximumVal < m.d.tempQ.temp) tempNormalMode.maximumVal = m.d.tempQ.temp;
+                        else if (tempNormalMode.minimumVal > m.d.tempQ.temp) tempNormalMode.minimumVal = m.d.tempQ.temp;
+                        
+                        if (humidityNormalMode.maximumVal < m.d.tempQ.hum) humidityNormalMode.maximumVal = m.d.tempQ.hum;
+                        else if (humidityNormalMode.minimumVal > m.d.tempQ.hum) humidityNormalMode.minimumVal = m.d.tempQ.hum;
+                    }
+            }
                 printk("Temp: %.2f C  Hum: %.2f %%\n",
                     m.d.tempQ.temp, m.d.tempQ.hum);
                 break;
@@ -237,6 +283,7 @@ void manageQueue() {
                 break;
             }
         }
+        newStart = false;
         printk("\n\n");
 }
 
@@ -267,38 +314,38 @@ void testSensors() {
     !device_is_ready(led_g.port) ||
     !device_is_ready(led_b.port)) {
     printk("LED ports not ready\n");
-    return;
+    //return;
     }
 
     if (!device_is_ready(i2c)) {
-    printk("i2c not ready\n");
-    return;
+        printk("i2c not ready\n");
+        //return;
     }
 
     if (!device_is_ready(uart)){
-    printk("uart not ready\n");
-    return;
+        printk("uart not ready\n");
+        //return;
     }
 
     if (!device_is_ready(adc)) {
-    printk("adc not ready\n");
-    return;
+        printk("adc not ready\n");
+        //return;
     }
 
     if (lightError < 0) {
-    printk("adc_channel_setup brightness error: %d\n", lightError);
-    return;
+        printk("adc_channel_setup brightness error: %d\n", lightError);
+        //return;
     }
 
     if (soilError < 0) {
-    printk("adc_channel_setup error: %d\n", soilError);
-    return;
+        printk("adc_channel_setup error: %d\n", soilError);
+        //return;
     }
 
     i2c_write_read(i2c,rgbAddr,(0x12 | 0x80),1,&whoAmI,1);
     if (whoAmI != 0x44) {
         printk("RGB sensor read error %x\n",whoAmI);
-        return;
+        //return;
     }
 
     i2c_reg_read_byte(i2c, accAddr, 0x0D, &whoAmI);
@@ -314,31 +361,36 @@ void testSensors() {
 }
 
 void everyHourNormalMode (int quantity) {
+    printk("\n\nHourly update:\n");
     // NM3
-    tempNormalMode.meanVal = tempNormalMode.sumForMean / quantity;  //logic done
-    humidityNormalMode.meanVal = humidityNormalMode.sumForMean / quantity;  //logic done
+    tempNormalMode.meanVal = tempNormalMode.sumForMean / quantity;
+    humidityNormalMode.meanVal = humidityNormalMode.sumForMean / quantity;
     lightNormalMode.meanVal = lightNormalMode.sumForMean / quantity;
     soilNormalMode.meanVal = soilNormalMode.sumForMean / quantity;
-    
-    // send logic
-    tempNormalMode.meanVal = 0;
-    humidityNormalMode.meanVal = 0;
-    lightNormalMode.meanVal = 0;
-    soilNormalMode.meanVal = 0;
+
+    printk("\ttemperature minimum - %d\n\ttemperature mean - %d\n\ttemperature mean - %d\n\n",tempNormalMode.minimumVal,tempNormalMode.meanVal,tempNormalMode.maximumVal);
+    printk("\thumidity minimum - %d\n\thumidity mean - %d\n\thumidity mean - %d\n\n");
+    printk("\tlight minimum - %d\n\tlight mean - %d\n\tlight mean - %d\n\n");
+    printk("\tsoil minimum - %d\n\tsoil mean - %d\n\tsoil mean - %d\n\n");
+
+
+    tempNormalMode.sumForMean = 0;
+    humidityNormalMode.sumForMean = 0;
+    lightNormalMode.sumForMean = 0;
+    soilNormalMode.sumForMean = 0;
 
     // NM4
-    if (rgbDominant[0] > rgbDominant[1] && rgbDominant[0] > rgbDominant[2]) printk("RED");
-    if (rgbDominant[1] > rgbDominant[0] && rgbDominant[1] > rgbDominant[2]) printk("GREEN");
-    if (rgbDominant[2] > rgbDominant[1] && rgbDominant[2] > rgbDominant[0]) printk("BLUE");
+    if (rgbDominant[0] > rgbDominant[1] && rgbDominant[0] > rgbDominant[2]) printk("RED was dominant color");
+    if (rgbDominant[1] > rgbDominant[0] && rgbDominant[1] > rgbDominant[2]) printk("GREEN was dominant color");
+    if (rgbDominant[2] > rgbDominant[1] && rgbDominant[2] > rgbDominant[0]) printk("BLUE was dominant color");
     
-    //send logic
     rgbDominant[0] = 0;
     rgbDominant[1] = 0;
     rgbDominant[2] = 0;
 
     //NM5
         //case waas written and now is send logic needed
-
+    newStart = true;
     
 }
 
@@ -347,7 +399,7 @@ void main(void) {
     rgbLedInit();
     i2cInit();
     uartInit();
-    adcInit();
+    adcInit(); 
     rgbInit();
     accelerometerInit();
 
@@ -359,8 +411,6 @@ void main(void) {
 
     static const struct gpio_dt_spec redLed = GPIO_DT_SPEC_GET(nucleoLedR, gpios);
     gpio_pin_configure_dt(&redLed, GPIO_OUTPUT_INACTIVE);
-    
-
         
         while (true) {
 
@@ -377,6 +427,7 @@ void main(void) {
             }
 
             if (mode == NORMAL) {
+                newStart = true;
                 gpio_pin_set_dt(&blueLed,0);
                 gpio_pin_set_dt(&redLed,0);
                 gpio_pin_set_dt(&greenLed,1);

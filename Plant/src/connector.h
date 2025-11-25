@@ -8,7 +8,7 @@
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/adc.h>
-#include <math.h> 
+#include <math.h>
 
 #define rgbAddr 0x29  
 #define accAddr 0x1D
