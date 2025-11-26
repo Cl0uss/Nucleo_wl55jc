@@ -3,6 +3,10 @@
 #define nucleoLedG DT_ALIAS(led1)
 #define nucleoLedR DT_ALIAS(led0)
 
+bool buttonWasPressed = false;
+const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0),gpios, {0});
+struct gpio_callback button_cb_data;
+
 const struct gpio_dt_spec led_r = GPIO_DT_SPEC_GET(DT_ALIAS(ledr), gpios);
 const struct gpio_dt_spec led_g = GPIO_DT_SPEC_GET(DT_ALIAS(ledg), gpios);
 const struct gpio_dt_spec led_b = GPIO_DT_SPEC_GET(DT_ALIAS(ledb), gpios);
@@ -10,12 +14,24 @@ const struct gpio_dt_spec led_b = GPIO_DT_SPEC_GET(DT_ALIAS(ledb), gpios);
 const struct device *i2c;
 const struct device *uart;
 const struct device *adc;
+const struct device *port;
 
-struct measDataQueue m;
+struct measDataQueue gpsMsg;
 
 bool permission = true;
 bool newStart = true;
 
+float axisX;
+float axisY;
+float axisZ;
+float lightValue;
+uint16_t clear;
+uint16_t red;
+uint16_t blue;
+uint16_t green;
+float soilValue;
+float tempValue;
+float humValue;
 // =================== NORMAL MODE ===================
 struct {
     float minimumVal;
@@ -59,9 +75,6 @@ int rgbDominant[3] = {0};
 // =================== NORMAL MODE FINISHED ===================
 
 
-
-uint8_t registers[2];
-
 int16_t soilRawVal;
 struct adc_channel_cfg soilCfg;
 struct adc_sequence soilSeq;
@@ -73,6 +86,7 @@ struct adc_sequence brightnessSeq;
 
 enum Mode {TEST, NORMAL, ADVANCED};
 enum Mode mode = TEST;
+int modeCount=1;
 
 K_MSGQ_DEFINE(messageQueue, sizeof(struct measDataQueue), 8, 4);
 
@@ -146,6 +160,7 @@ void adcInit() {
 
 }
 
+uint8_t registers[2];
 void registersInput(uint8_t first, uint8_t second) {
     
     registers[0] = first;
@@ -175,122 +190,117 @@ void accelerometerInit(){
 
 }
 
-void manageQueue() {
+void distanceInit() {
 
-    while (k_msgq_get(&messageQueue, &m, K_NO_WAIT) == 0) {
+    // GPIOA from devicetree
+    port = DEVICE_DT_GET(DT_NODELABEL(gpioa));
+    if (!device_is_ready(port)) {
+        printk("GPIOA not ready!\n");
+        return;
+    }
 
-            switch (m.type) {
-                
-            case soilDataQ:
-                if (mode == NORMAL){
-                    soilNormalMode.sumForMean += m.d.soilQ;
-                    if (newStart) {
-                        soilNormalMode.maximumVal = m.d.soilQ;
-                        soilNormalMode.minimumVal = m.d.soilQ;
-                    }
-                    else {
-                        if (lightNormalMode.maximumVal < m.d.lightQ) lightNormalMode.maximumVal = m.d.lightQ;
-                        else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
-                    }
-                }
-                printk("Soil: %.1f%%\n", m.d.soilQ);
-                break;
+    // TRIG: PA5
+    if (gpio_pin_configure(port, 5 /*PA5*/, GPIO_OUTPUT_INACTIVE)) {
+        printk("Cannot configure TRIG\n");
+        return;
+    }
 
-            case lightDataQ:
-                if (mode == NORMAL){
-                    lightNormalMode.sumForMean += m.d.lightQ;
-                    if (newStart) {
-                        lightNormalMode.maximumVal = m.d.lightQ;
-                        lightNormalMode.minimumVal = m.d.lightQ;
-                    }
-                    else {
-                        if (lightNormalMode.maximumVal < m.d.lightQ) lightNormalMode.maximumVal = m.d.lightQ;
-                        else if (lightNormalMode.minimumVal > m.d.lightQ) lightNormalMode.minimumVal = m.d.lightQ;
-                    }
-                }
-                printk("Light: %.1f%%\n", m.d.lightQ);
-                break;
+    // ECHO: PA6
+    if (gpio_pin_configure(port, 6 /*PA6*/, GPIO_INPUT)) {
+        printk("Cannot configure ECHO\n");
+        return;
+    }
+}
 
-            case rgbDataQ:
-                if ( mode == TEST ){
-                    if (m.d.rgbQ.r > m.d.rgbQ.g && m.d.rgbQ.r > m.d.rgbQ.b) rgbChange(1);
-                    else if (m.d.rgbQ.g > m.d.rgbQ.r && m.d.rgbQ.g > m.d.rgbQ.b ) rgbChange(2);
-                    else rgbChange(3);
-                }
-                else if ( mode == NORMAL){
-                    if (m.d.rgbQ.r > m.d.rgbQ.g && m.d.rgbQ.r > m.d.rgbQ.b) rgbDominant[0]+=1;
-                    else if (m.d.rgbQ.g > m.d.rgbQ.r && m.d.rgbQ.g > m.d.rgbQ.b ) rgbDominant[1]+=1;
-                    else rgbDominant[2]+=1;
-                }
-                printk("RGB: R=%u G=%u B=%u\n",
-                    m.d.rgbQ.r, m.d.rgbQ.g, m.d.rgbQ.b);
-                break;
+void alertRaise() {
+    return;
+}
 
-            case accDataQ:
-                    if (mode == NORMAL) {
-                        if (newStart) {
-                            accNormalMode.xMaximum = m.d.accQ.x;
-                            accNormalMode.xMinimum = m.d.accQ.x;
+void manageData () {
 
-                            accNormalMode.yMaximum = m.d.accQ.y;
-                            accNormalMode.yMinimum = m.d.accQ.y;
-                            
-                            accNormalMode.zMaximum = m.d.accQ.z;
-                            accNormalMode.zMinimum = m.d.accQ.z;
-                        }
-                        
-                        else if (abs(m.d.accQ.x) > abs(accNormalMode.xMaximum)) accNormalMode.xMaximum = m.d.accQ.x;
-                        else if (abs(m.d.accQ.x) < abs(accNormalMode.xMinimum)) accNormalMode.xMinimum = m.d.accQ.x;
+    if (mode == TEST){
+        if (red > green && red  >  blue)  rgbChange(1); //red
+        if (green > red && green > blue)  rgbChange(2); //green
+        if (blue > red  && blue  > green) rgbChange(3); //blue
 
-                        if (abs(m.d.accQ.y) > abs(accNormalMode.yMaximum)) accNormalMode.yMaximum = m.d.accQ.y;
-                        else if (abs(m.d.accQ.y) < abs(accNormalMode.yMinimum)) accNormalMode.yMinimum = m.d.accQ.y;
+    }
 
-                        if (abs(m.d.accQ.z) > abs(accNormalMode.zMaximum)) accNormalMode.zMaximum = m.d.accQ.z;
-                        else if (abs(m.d.accQ.z) < abs(accNormalMode.zMinimum)) accNormalMode.zMinimum = m.d.accQ.z;
-                    }
-                printk("Acc: X_axis=%.2fm/s² Y_axis=%.2fm/s² Z_axis=%.2fm/s²\n",
-                    m.d.accQ.x, m.d.accQ.y, m.d.accQ.z);
-                break;
+    else if (mode == NORMAL || mode == ADVANCED) {
+        if (soilValue  < 0.0  || soilValue  > 100.0) alertRaise('s');
+        if (lightValue < 0.0  || lightValue > 100.0) alertRaise('l');
+        //if () for accelerometer
+        if (tempValue < -10.0 || tempValue > 50.0) alertRaise('t');
+        if (humValue  <  25.0 || humValue  > 75.0) alertRaise('h');
 
-            case tempDataQ:
-                if (mode == NORMAL) {
-                    tempNormalMode.sumForMean += m.d.tempQ.temp;
-                    humidityNormalMode.sumForMean += m.d.tempQ.hum;
+        if (newStart) {
+            soilNormalMode.maximumVal = soilValue;
+            soilNormalMode.minimumVal = soilValue;
+            
+            lightNormalMode.maximumVal = lightValue;
+            lightNormalMode.minimumVal = lightValue;
 
-                    if (newStart) {
-                        tempNormalMode.maximumVal = m.d.tempQ.temp;
-                        tempNormalMode.minimumVal = m.d.tempQ.temp;
+            accNormalMode.xMaximum = axisX;
+            accNormalMode.xMinimum = axisX;
+            accNormalMode.yMaximum = axisY;
+            accNormalMode.yMinimum = axisY;
+            
+            accNormalMode.zMaximum = axisZ;
+            accNormalMode.zMinimum = axisZ;
 
-                        humidityNormalMode.maximumVal = m.d.tempQ.hum;
-                        humidityNormalMode.minimumVal = m.d.tempQ.hum;
-                    }
-                    else { 
-                        if (tempNormalMode.maximumVal < m.d.tempQ.temp) tempNormalMode.maximumVal = m.d.tempQ.temp;
-                        else if (tempNormalMode.minimumVal > m.d.tempQ.temp) tempNormalMode.minimumVal = m.d.tempQ.temp;
-                        
-                        if (humidityNormalMode.maximumVal < m.d.tempQ.hum) humidityNormalMode.maximumVal = m.d.tempQ.hum;
-                        else if (humidityNormalMode.minimumVal > m.d.tempQ.hum) humidityNormalMode.minimumVal = m.d.tempQ.hum;
-                    }
-            }
-                printk("Temp: %.1f°C  Hum: %.1f%%\n",
-                    m.d.tempQ.temp, m.d.tempQ.hum);
-                break;
+            tempNormalMode.maximumVal = tempValue;
+            tempNormalMode.minimumVal = tempValue;
+            humidityNormalMode.maximumVal = humValue;
+            humidityNormalMode.minimumVal = humValue;
 
-            case gpsDataQ:
-                printk("GPS: %s\n", m.d.gpsQ);
-                break;
-            default:
-                break;
-            }
         }
+        else {
+            if      (soilNormalMode.maximumVal < soilValue) soilNormalMode.maximumVal = soilValue;
+            else if (soilNormalMode.minimumVal > soilValue) soilNormalMode.minimumVal = soilValue;
+            
+            if      (lightNormalMode.maximumVal < lightValue) lightNormalMode.maximumVal = lightValue;
+            else if (lightNormalMode.minimumVal > lightValue) lightNormalMode.minimumVal = lightValue;
+
+            if      (tempNormalMode.maximumVal < tempValue) tempNormalMode.maximumVal = tempValue;
+            else if (tempNormalMode.minimumVal > tempValue) tempNormalMode.minimumVal = tempValue;
+
+            if      (humidityNormalMode.maximumVal < humValue) humidityNormalMode.maximumVal = humValue;
+            else if (humidityNormalMode.minimumVal > humValue) humidityNormalMode.minimumVal = humValue;
+
+            if      (accNormalMode.xMaximum < axisX) accNormalMode.xMaximum = axisX;
+            else if (accNormalMode.xMinimum > axisX) accNormalMode.xMinimum = axisX;
+
+            if      (accNormalMode.yMaximum < axisY) accNormalMode.yMaximum = axisY;
+            else if (accNormalMode.yMinimum > axisY) accNormalMode.yMinimum = axisY;
+
+            if      (accNormalMode.zMaximum < axisZ) accNormalMode.zMaximum = axisZ;
+            else if (accNormalMode.zMinimum > axisZ) accNormalMode.zMinimum = axisZ;
+        }
+
+        soilNormalMode.sumForMean     += soilValue;
+        lightNormalMode.sumForMean    += lightValue;
+        tempNormalMode.sumForMean     += tempValue;
+        humidityNormalMode.sumForMean += humValue;
+
+        if (red > green && red  >  blue)  rgbDominant[0] +=1; //red
+        if (green > red && green > blue)  rgbDominant[1] +=1; //green
+        if (blue > red  && blue  > green) rgbDominant[2] +=1; //blue
+
+    }
+
+
+        printk("SOIL MOISTURE: %.1f%%\n",soilValue);
+        printk("Light: %.1f%%\n",lightValue);
+        k_msgq_get(&messageQueue,&gpsMsg,K_NO_WAIT);
+        printk("GPS: %s\n",gpsMsg.gpsQ);
+        printk("COLOR SENSOR: Clear: %d Red: %d Green: %d Blue: %d\n", clear,red,green,blue);
+        printk("ACCELEROMETERS: X_axis: %.2fm/s², Y_axis: %.2fm/s², Z_axis: %.2fm/s²\n",axisX,axisY,axisZ);
+        printk("TEMP/HUM Temperature: %.1f°C,\tRelative Humidity: %.1f%%\n\n",tempValue,humValue);
         newStart = false;
-        printk("\n\n");
 }
 
 K_THREAD_DEFINE(gpsThread,512,gpsMeasure,NULL,NULL,NULL,1,0,0);
 
 void measures(){
-
     brightnessMeasure();
 
     rgbMeasure();
@@ -300,11 +310,10 @@ void measures(){
     temperatureMeasure();
 
     soilMeasure();
-    
+
     while (permission) k_msleep(1);
 
-    manageQueue();
-
+    manageData();
     permission = true;          
 }
 
@@ -342,9 +351,9 @@ void testSensors() {
         //return;
     }
 
-    i2c_write_read(i2c,rgbAddr,(0x12 | 0x80),1,&whoAmI,1);
-    if (whoAmI != 0x44) {
-        printk("RGB sensor read error %x\n",whoAmI);
+    i2c_write_read(i2c,rgbAddr,0x29 | 0x80,1,&whoAmI,1);
+    if (whoAmI != 0) {
+        printk("RGB sensor read  error %x\n",whoAmI);
         //return;
     }
 
@@ -395,14 +404,32 @@ void everyHourNormalMode (int quantity) {
     
 }
 
-void main(void) {
+void buttonPressed() {
+    buttonWasPressed = true;
+    modeCount++;
+    if (modeCount >= 4) modeCount = 1; 
+    if (modeCount==1) mode = TEST;
+    else if (modeCount==2) mode = NORMAL;
+    else mode = ADVANCED;
+}
 
+void buttonInit() {
+    gpio_pin_configure_dt(&button,GPIO_INPUT);
+    gpio_pin_interrupt_configure_dt(&button,GPIO_INT_EDGE_TO_ACTIVE);
+    gpio_init_callback(&button_cb_data, buttonPressed, BIT(button.pin));
+    gpio_add_callback(button.port,&button_cb_data);
+}
+
+void main(void) {
     rgbLedInit();
     i2cInit();
     uartInit();
     adcInit(); 
     rgbInit();
     accelerometerInit();
+    //distanceInit();
+    //distanceMeasure();
+    buttonInit();
 
     static const struct gpio_dt_spec blueLed = GPIO_DT_SPEC_GET(nucleoLedB, gpios);
     gpio_pin_configure_dt(&blueLed, GPIO_OUTPUT_INACTIVE);
@@ -416,7 +443,7 @@ void main(void) {
         while (true) {
 
             if (mode == TEST) {
-                printk("TEST MODE\n");
+                printk("\nTEST MODE\n");
                 testSensors();
                 gpio_pin_set_dt(&blueLed,1);
                 gpio_pin_set_dt(&redLed,0);
@@ -424,12 +451,19 @@ void main(void) {
 
                 while (mode == TEST) {
                     measures();
-                    k_msleep(2000);
+                    for (int i = 0; i<2000; i++) {
+                        if (buttonWasPressed) {
+                            buttonWasPressed = false; 
+                            break;
+                        }
+                        k_msleep(1);
+                    }
                 }
             }
 
             if (mode == NORMAL) {
-                printk("NORMAL MODE\n");
+                rgbChange(0);
+                printk("\nNORMAL MODE\n");
                 newStart = true;
                 gpio_pin_set_dt(&blueLed,0);
                 gpio_pin_set_dt(&redLed,0);
@@ -440,22 +474,52 @@ void main(void) {
                 while (mode == NORMAL) {
                     measures();
                     quantity++;
+                    if (k_uptime_get() - startHourTimer >= 15 * MSEC_PER_SEC) {
+                        everyHourNormalMode(quantity);
+                        quantity = 0;
+                        startHourTimer = k_uptime_get();
+                    } 
+                    for (int i = 0; i<5000; i++) {
+                        if (buttonWasPressed) {
+                            buttonWasPressed = false; 
+                            break;
+                        }
+                        k_msleep(1);
+                    }
+                }
+            }
+
+            if (mode == ADVANCED) {
+                rgbChange(0);
+                printk("\nADVANCED MODE\n");
+                gpio_pin_set_dt(&blueLed,0);
+                gpio_pin_set_dt(&redLed,1);
+                gpio_pin_set_dt(&greenLed,0);
+
+                int quantity = 0;
+                int64_t startHourTimer = k_uptime_get();
+                while (mode == ADVANCED) {
+                    measures();
+                    quantity++;
                     if (k_uptime_get() - startHourTimer >= 60 * MSEC_PER_SEC) {
                         everyHourNormalMode(quantity);
                         quantity = 0;
                         startHourTimer = k_uptime_get();
                     } 
-                    k_msleep(10000);
+                    for (int i = 0; i<10000; i++) {
+                        if (buttonWasPressed) {
+                            buttonWasPressed = false; 
+                            break;
+                        }
+                        k_msleep(1);
                 }
-            }
-
-            if (mode == ADVANCED) {
-                gpio_pin_set_dt(&blueLed,0);
-                gpio_pin_set_dt(&redLed,1);
-                gpio_pin_set_dt(&greenLed,0);
-                    while (mode == ADVANCED) {
-
-                    }
             }
         }
     }
+}
+
+
+/*TODO : figure out what limit values are for accelerometer then write them
+write alertRaise function
+make distance sensor transfer data to main file
+*/

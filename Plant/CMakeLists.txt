@@ -11,4 +11,5 @@ target_sources(app PRIVATE
         measures/gps.c
         measures/soil.c
         measures/brightness.c
+        measures/distance.c
         )

@@ -21,10 +21,7 @@ void accelerometerMeasure() {
         z = (int16_t) ((accData[0] << 8) | accData[1]) >> 2;   
         
 
-        float xf = (float)x * 9.80665f / 4096.0f;
-        float yf = (float)y * 9.80665f / 4096.0f;
-        float zf = (float)z * 9.80665f / 4096.0f;
-
-        struct measDataQueue msg = { .type = accDataQ, .d.accQ = {.x = xf, .y = yf, .z =zf} };
-        k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
+        axisX = (float)x * 9.80665f / 4096.0f;
+        axisY = (float)y * 9.80665f / 4096.0f;
+        axisZ = (float)z * 9.80665f / 4096.0f;
 }

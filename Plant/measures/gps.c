@@ -12,14 +12,12 @@ void gpsMeasure(void) {
             if (rxByte == '\r') continue;
             else if (rxByte == '\n') {
                 nmeaBuff[nmeaPos] = '\0';
-
                 struct measDataQueue msg = {0};
-                msg.type = gpsDataQ;
-                size_t len = nmeaPos < sizeof(msg.d.gpsQ) - 1 ? nmeaPos : sizeof(msg.d.gpsQ) - 1;
-                memcpy(msg.d.gpsQ, nmeaBuff, len);
-                msg.d.gpsQ[len] = '\0';
+                size_t len = nmeaPos < sizeof(msg.gpsQ) - 1 ? nmeaPos : sizeof(msg.gpsQ) - 1;
+                memcpy(msg.gpsQ, nmeaBuff, len);
+                msg.gpsQ[len] = '\0';
 
-                int err = k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
+                k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
                 gpsReady = true;
                 permission = false;
                 nmeaPos = 0;    

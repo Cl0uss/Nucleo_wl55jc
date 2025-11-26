@@ -24,6 +24,7 @@ extern const struct gpio_dt_spec led_b;
 extern const struct device *adc;
 extern const struct device *i2c;
 extern const struct device *uart;
+extern const struct device *port;
 
 extern struct adc_channel_cfg soilCfg;
 extern struct adc_sequence soilSeq;
@@ -35,25 +36,8 @@ extern int16_t brightnessRawVal;
 
 extern bool permission;
 
-enum measType {
-    soilDataQ,
-    lightDataQ,
-    rgbDataQ,
-    accDataQ,
-    tempDataQ,
-    gpsDataQ
-};
-
 struct measDataQueue {
-    enum measType type;
-    union {
-        float soilQ;
-        float lightQ;
-        struct { uint16_t r,g,b; } rgbQ;
-        struct { float x,y,z; } accQ;
-        struct { float temp, hum; } tempQ;
-        char gpsQ[128];
-    } d;
+    char gpsQ[128];
 };
 
 extern struct k_msgq messageQueue;
@@ -65,3 +49,17 @@ void temperatureMeasure(void);
 void gpsMeasure(void);
 void soilMeasure(void);
 void brightnessMeasure(void);
+
+
+
+extern float axisX;
+extern float axisY;
+extern float axisZ;
+extern float lightValue;
+extern uint16_t clear;
+extern uint16_t red;
+extern uint16_t green;
+extern uint16_t blue;
+extern float soilValue;
+extern float tempValue;
+extern float humValue;
