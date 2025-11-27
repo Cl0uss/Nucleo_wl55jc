@@ -6,7 +6,7 @@
 // ===================   BUTTON   ===================
 
 bool buttonWasPressed = false;
-const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0),gpios, {0});
+const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw1),gpios, {0});
 struct gpio_callback button_cb_data;
 
 // =================== BUTTON END ===================
@@ -46,16 +46,27 @@ float tempValue;
 float humValue;
 int16_t soilRawVal;
 int16_t brightnessRawVal;
+uint32_t distanceVal;
 
     // =================== SENSOR VALUES END ===================
 
 // ===================   LIMITS   ===================
 
-float tempLimits[] = {-10.0, 50.0};
-float humLimits[]  = {25.0,75.0};
-
-
-
+const float tempLimits[2]  = {-10.0f, 50.0f};
+const float humLimits[2]   = {25.0f, 75.0f};
+const float lightLimits[2] = {3.0f, 15.0f};
+const float soilLimits[2]  = {900.0f,3600.0f};
+const float rgbLimit[3][2] = {
+    {2500.0f,4500.0f},   //r
+    {3500.0f,5500.0f},   //g
+    {800.0f,2800.0f}    //b
+    // such values when clear is ≈ 10.500
+};
+const float accelerometerLimit[3][2] = {
+    {0.0f,0.2f},    //x
+    {8.5f,10.5f},   //y
+    {0.0f,2.0f}     //z
+};
 
 // =================== LIMITS END ===================
 
@@ -99,6 +110,7 @@ struct {
 
 int rgbDominant[3] = {0};
 
+
     // =================== NORMAL MODE FINISHED ===================
 
 
@@ -122,6 +134,7 @@ bool measureTime = false;
 int soilError;
 int lightError;
 uint8_t whoAmI;
+
 
 void rgbLedInit() {
 
@@ -239,8 +252,18 @@ void distanceInit() {
     }
 }
 
-void alertRaise() {
-    return;
+void alertRaise(int sensor) {
+    rgbChange(sensor);
+    k_msleep(250);
+    rgbChange(0);
+    /*
+    1 - light
+    2 - rgb
+    3 - accelerometer
+    4 - temperature
+    5 - humidity
+    6 - soil
+    */
 }
 
 void manageData () {
@@ -253,11 +276,6 @@ void manageData () {
     }
 
     else if (mode == NORMAL || mode == ADVANCED) {
-        if (soilValue  < 0.0  || soilValue  > 100.0) alertRaise('s');
-        if (lightValue < 0.0  || lightValue > 100.0) alertRaise('l');
-        //if () for accelerometer
-        if (tempValue < -10.0 || tempValue > 50.0) alertRaise('t');
-        if (humValue  <  25.0 || humValue  > 75.0) alertRaise('h');
 
         if (newStart) {
             soilNormalMode.maximumVal = soilValue;
@@ -321,8 +339,33 @@ void manageData () {
         printk("GPS: %s\n",gpsMsg.gpsQ);
         printk("COLOR SENSOR: Clear: %d Red: %d Green: %d Blue: %d\n", clear,red,green,blue);
         printk("ACCELEROMETERS: X_axis: %.2fm/s², Y_axis: %.2fm/s², Z_axis: %.2fm/s²\n",axisX,axisY,axisZ);
-        printk("TEMP/HUM Temperature: %.1f°C,\tRelative Humidity: %.1f%%\n\n",tempValue,humValue);
+        printk("TEMP/HUM Temperature: %.1f°C,\tRelative Humidity: %.1f%%\n",tempValue,humValue);
         newStart = false;
+
+        if (mode == ADVANCED) {
+            printk("Distance: %ucm\n",distanceVal);
+
+        }
+        printk("\n\n");
+}
+
+void manageAlert(){
+    if (lightValue < lightLimits[0] || lightValue > lightLimits[1]) alertRaise(1);
+    
+    if (red   < rgbLimit[0][0] || red   > rgbLimit[0][1] ||
+        green < rgbLimit[1][0] || green > rgbLimit[1][1] ||
+        blue  < rgbLimit[2][0] || blue  > rgbLimit[2][1] ) alertRaise(2);
+
+    if (abs(axisX) < accelerometerLimit[0][0] || abs(axisX) > accelerometerLimit[0][1] ||
+        abs(axisY) < accelerometerLimit[1][0] || abs(axisY) > accelerometerLimit[1][1] ||
+        abs(axisZ) < accelerometerLimit[2][0] || abs(axisZ) > accelerometerLimit[2][1] ) alertRaise(3);
+
+    if (tempValue < tempLimits[0] || tempValue > tempLimits[1]) alertRaise(4);
+
+    if (humValue < humLimits[0] || humValue > humLimits[1]) alertRaise(5);
+
+    if (soilValue < soilLimits[0] || soilValue > soilLimits[1]) alertRaise(6);
+
 }
 
 K_THREAD_DEFINE(gpsThread,512,gpsMeasure,NULL,NULL,NULL,1,0,0);
@@ -338,11 +381,12 @@ void measures(){
 
     soilMeasure();
 
-    //distanceMeasure();
+    if (mode == ADVANCED) distanceMeasure();
 
     while (permission) k_msleep(1);
 
     manageData();
+    if (mode == NORMAL || mode == ADVANCED) manageAlert();
     permission = true;          
 }
 
@@ -449,6 +493,21 @@ void buttonInit() {
     gpio_add_callback(button.port,&button_cb_data);
 }
 
+
+
+
+
+void developmentTest() {
+    while(true) {
+        distanceMeasure();
+        printk("%u\n",distanceVal);
+        k_msleep(500);
+    }
+}
+
+
+
+
 void main(void) {
     rgbLedInit();
     i2cInit();
@@ -456,7 +515,7 @@ void main(void) {
     adcInit(); 
     rgbInit();
     accelerometerInit();
-    //distanceInit();
+    distanceInit();
     buttonInit();
 
     static const struct gpio_dt_spec blueLed = GPIO_DT_SPEC_GET(nucleoLedB, gpios);
@@ -467,87 +526,101 @@ void main(void) {
 
     static const struct gpio_dt_spec redLed = GPIO_DT_SPEC_GET(nucleoLedR, gpios);
     gpio_pin_configure_dt(&redLed, GPIO_OUTPUT_INACTIVE);
-        
-        while (true) {
 
-            if (mode == TEST) {
-                printk("\nTEST MODE\n");
-                testSensors();
-                gpio_pin_set_dt(&blueLed,1);
-                gpio_pin_set_dt(&redLed,0);
-                gpio_pin_set_dt(&greenLed,0);
 
-                while (mode == TEST) {
-                    measures();
-                    for (int i = 0; i<2000; i++) {
-                        if (buttonWasPressed) {
-                            buttonWasPressed = false; 
-                            break;
-                        }
-                        k_msleep(1);
+    //developmentTest();
+    while (true) {
+
+        if (mode == TEST) {
+            printk("\nTEST MODE\n");
+            testSensors();
+            gpio_pin_set_dt(&blueLed,1);
+            gpio_pin_set_dt(&redLed,0);
+            gpio_pin_set_dt(&greenLed,0);
+
+            while (mode == TEST) {
+                measures();
+                for (int i = 0; i<2000; i++) {
+                    if (buttonWasPressed) {
+                        buttonWasPressed = false; 
+                        break;
                     }
+                    k_msleep(1);
                 }
             }
+        }
 
-            if (mode == NORMAL) {
-                rgbChange(0);
-                printk("\nNORMAL MODE\n");
-                newStart = true;
-                gpio_pin_set_dt(&blueLed,0);
-                gpio_pin_set_dt(&redLed,0);
-                gpio_pin_set_dt(&greenLed,1);
-
-                int quantity = 0;
-                int64_t startHourTimer = k_uptime_get();
-                while (mode == NORMAL) {
-                    measures();
-                    quantity++;
-                    if (k_uptime_get() - startHourTimer >= 15 * MSEC_PER_SEC) {
-                        everyHourNormalMode(quantity);
-                        quantity = 0;
-                        startHourTimer = k_uptime_get();
-                    } 
-                    for (int i = 0; i<5000; i++) {
-                        if (buttonWasPressed) {
-                            buttonWasPressed = false; 
-                            break;
-                        }
-                        k_msleep(1);
+        if (mode == NORMAL) {
+            rgbChange(0);
+            printk("\nNORMAL MODE\n");
+            newStart = true;
+            gpio_pin_set_dt(&blueLed,0);
+            gpio_pin_set_dt(&redLed,0);
+            gpio_pin_set_dt(&greenLed,1);
+            int quantity = 0;
+            int64_t startRegMeasure = k_uptime_get();
+            int64_t startHourTimer = k_uptime_get();
+            while (mode == NORMAL) {
+                measures();
+                quantity++;
+                if (k_uptime_get() - startHourTimer >= 3600 * MSEC_PER_SEC) {
+                    everyHourNormalMode(quantity);
+                    quantity = 0;
+                    startHourTimer = k_uptime_get();
+                } 
+                while (k_uptime_get() - startRegMeasure < 30 * MSEC_PER_SEC) {
+                    if (buttonWasPressed) {
+                        buttonWasPressed = false; 
+                        break;
                     }
+                    k_msleep(1);
                 }
+                startRegMeasure = k_uptime_get();
             }
+        }
 
-            if (mode == ADVANCED) {
-                rgbChange(0);
-                printk("\nADVANCED MODE\n");
-                gpio_pin_set_dt(&blueLed,0);
-                gpio_pin_set_dt(&redLed,1);
-                gpio_pin_set_dt(&greenLed,0);
-
-                int quantity = 0;
-                int64_t startHourTimer = k_uptime_get();
-                while (mode == ADVANCED) {
-                    measures();
-                    quantity++;
-                    if (k_uptime_get() - startHourTimer >= 60 * MSEC_PER_SEC) {
-                        everyHourNormalMode(quantity);
-                        quantity = 0;
-                        startHourTimer = k_uptime_get();
+        if (mode == ADVANCED) {
+            rgbChange(0);
+            printk("\nADVANCED MODE\n");
+            gpio_pin_set_dt(&blueLed,0);
+            gpio_pin_set_dt(&redLed,1);
+            gpio_pin_set_dt(&greenLed,0);
+            int quantity = 0;
+            int64_t startRegMeasure = k_uptime_get();
+            int64_t startHourTimer = k_uptime_get();
+            while (mode == ADVANCED) {
+                measures();
+                quantity++;
+                if (k_uptime_get() - startHourTimer >= 3600 * MSEC_PER_SEC) {
+                    everyHourNormalMode(quantity);
+                    quantity = 0;
+                    startHourTimer = k_uptime_get();
                     } 
-                    for (int i = 0; i<10000; i++) {
-                        if (buttonWasPressed) {
-                            buttonWasPressed = false; 
-                            break;
+                while (k_uptime_get() - startRegMeasure < 30 * MSEC_PER_SEC) {
+                    distanceMeasure();
+                    if (distanceVal == 99) {
+                        gpio_pin_toggle_dt(&redLed);
+                        k_msleep(1000);
+                    }
+                    else {
+                        gpio_pin_set_dt(&redLed,1);
+                        k_msleep(1000);
+                    }
+                    if (buttonWasPressed) {
+                        buttonWasPressed = false; 
+                        break;
                         }
-                        k_msleep(1);
+                    k_msleep(1);
                 }
+                startRegMeasure = k_uptime_get();
             }
         }
     }
 }
 
 
-/*TODO : figure out what limit values are for accelerometer then write them
-write alertRaise function
-make distance sensor transfer data to main file
+/*
+TODO : 
+NM6
+parse gps data
 */

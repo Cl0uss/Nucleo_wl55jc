@@ -1,9 +1,10 @@
 #include "../src/connector.h"
 
-// on air (min) - 400   on fingers - 3110
+// on earth (min) - 900   wet water (max) - 3600
 
 void soilMeasure(void)
 {
     adc_read(adc, &soilSeq);
-    soilValue = (soilRawVal - 400.0f) * 100.0f / (3110.0f - 400.0f);
+    printk("soilRawVal = %d\n",soilRawVal);
+    soilValue = (soilRawVal - 900.0f) * 100.0f / (3600.0f - 900.0f);
 }

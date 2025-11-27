@@ -50,8 +50,6 @@ void gpsMeasure(void);
 void soilMeasure(void);
 void brightnessMeasure(void);
 
-
-
 extern float axisX;
 extern float axisY;
 extern float axisZ;
@@ -63,3 +61,4 @@ extern uint16_t blue;
 extern float soilValue;
 extern float tempValue;
 extern float humValue;
+extern uint32_t distanceVal;
