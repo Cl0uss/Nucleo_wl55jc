@@ -3,23 +3,35 @@
 #define nucleoLedG DT_ALIAS(led1)
 #define nucleoLedR DT_ALIAS(led0)
 
+// ===================   BUTTON   ===================
+
 bool buttonWasPressed = false;
 const struct gpio_dt_spec button = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0),gpios, {0});
 struct gpio_callback button_cb_data;
+
+// =================== BUTTON END ===================
+
+
+    // ===================   RGB_LEDS   ===================
 
 const struct gpio_dt_spec led_r = GPIO_DT_SPEC_GET(DT_ALIAS(ledr), gpios);
 const struct gpio_dt_spec led_g = GPIO_DT_SPEC_GET(DT_ALIAS(ledg), gpios);
 const struct gpio_dt_spec led_b = GPIO_DT_SPEC_GET(DT_ALIAS(ledb), gpios);
 
+    // =================== RGB_LEDS END ===================
+
+
+// ===================   COMMUNICATION   ===================
+
 const struct device *i2c;
 const struct device *uart;
 const struct device *adc;
 const struct device *port;
-
 struct measDataQueue gpsMsg;
 
-bool permission = true;
-bool newStart = true;
+// =================== COMMUNICATION END ===================
+
+    // ===================   SENSOR VALUES   ===================
 
 float axisX;
 float axisY;
@@ -32,7 +44,22 @@ uint16_t green;
 float soilValue;
 float tempValue;
 float humValue;
-// =================== NORMAL MODE ===================
+int16_t soilRawVal;
+int16_t brightnessRawVal;
+
+    // =================== SENSOR VALUES END ===================
+
+// ===================   LIMITS   ===================
+
+float tempLimits[] = {-10.0, 50.0};
+float humLimits[]  = {25.0,75.0};
+
+
+
+
+// =================== LIMITS END ===================
+
+    // =================== NORMAL MODE ===================
 struct {
     float minimumVal;
     float sumForMean;
@@ -72,14 +99,11 @@ struct {
 
 int rgbDominant[3] = {0};
 
-// =================== NORMAL MODE FINISHED ===================
+    // =================== NORMAL MODE FINISHED ===================
 
 
-int16_t soilRawVal;
 struct adc_channel_cfg soilCfg;
 struct adc_sequence soilSeq;
-
-int16_t brightnessRawVal;
 struct adc_channel_cfg brightnessCfg;
 struct adc_sequence brightnessSeq;
 
@@ -87,6 +111,9 @@ struct adc_sequence brightnessSeq;
 enum Mode {TEST, NORMAL, ADVANCED};
 enum Mode mode = TEST;
 int modeCount=1;
+
+bool permission = true;
+bool newStart = true;
 
 K_MSGQ_DEFINE(messageQueue, sizeof(struct measDataQueue), 8, 4);
 
@@ -311,6 +338,8 @@ void measures(){
 
     soilMeasure();
 
+    //distanceMeasure();
+
     while (permission) k_msleep(1);
 
     manageData();
@@ -428,7 +457,6 @@ void main(void) {
     rgbInit();
     accelerometerInit();
     //distanceInit();
-    //distanceMeasure();
     buttonInit();
 
     static const struct gpio_dt_spec blueLed = GPIO_DT_SPEC_GET(nucleoLedB, gpios);
