@@ -9,6 +9,9 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/adc.h>
 #include <math.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define rgbAddr 0x29  
 #define accAddr 0x1D
@@ -39,7 +42,7 @@ extern bool permission;
 struct measDataQueue {
     char gpsQ[128];
 };
-
+extern struct measDataQueue gpsMsg;
 extern struct k_msgq messageQueue;
 
 void rgbChange(int);
@@ -49,6 +52,7 @@ void temperatureMeasure(void);
 void gpsMeasure(void);
 void soilMeasure(void);
 void brightnessMeasure(void);
+void gpsToHuman(int main);
 
 extern float axisX;
 extern float axisY;

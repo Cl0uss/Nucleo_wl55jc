@@ -19,14 +19,13 @@ static bool checksum_ok(const char *s) {
     if (h1 < 0 || h2 < 0) return false;
     uint8_t want = (uint8_t)((h1 << 4) | h2);
     uint8_t calc = 0;
-    for (const char *p = s + 1; p < star; ++p) calc ^= (uint8_t)*p;
+    for (const char *p = s + 1; p < star; p++) calc ^= (uint8_t)*p;
     return calc == want;
 }
 
 void gpsMeasure(void) {
     while (true) {
-        bool gpsReady = false;
-        while (!gpsReady && permission) {
+        while (permission) {
             while (uart_poll_in(uart, &rxByte) == 0) {
                 if (rxByte == '\r') continue;
 
@@ -49,7 +48,6 @@ void gpsMeasure(void) {
                         memcpy(msg.gpsQ, nmeaBuff, len);
                         msg.gpsQ[len] = '\0';
                         k_msgq_put(&messageQueue, &msg, K_NO_WAIT);
-                        gpsReady = true;
                         permission = false;
                     }
 

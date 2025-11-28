@@ -358,7 +358,8 @@ void manageData () {
         printk("SOIL MOISTURE: %.1f%%\n",soilValue);
         printk("Light: %.1f%%\n",lightValue);
         k_msgq_get(&messageQueue,&gpsMsg,K_NO_WAIT);
-        printk("GPS: %s\n",gpsMsg.gpsQ);
+        if (mode == TEST) gpsToHuman(1); //print is there
+        else gpsToHuman(2);
         printk("COLOR SENSOR: Clear: %d Red: %d Green: %d Blue: %d\n", clear,red,green,blue);
         printk("ACCELEROMETERS: X_axis: %.2fm/s², Y_axis: %.2fm/s², Z_axis: %.2fm/s²\n",axisX,axisY,axisZ);
         printk("TEMP/HUM Temperature: %.1f°C,\tRelative Humidity: %.1f%%\n",tempValue,humValue);
@@ -415,52 +416,31 @@ void testSensors() {
 
     if (!device_is_ready(led_r.port) ||
     !device_is_ready(led_g.port) ||
-    !device_is_ready(led_b.port)) {
-    printk("LED ports not ready\n");
-    //return;
-    }
+    !device_is_ready(led_b.port)) printk("LED ports not ready\n");
 
-    if (!device_is_ready(i2c)) {
-        printk("i2c not ready\n");
-        //return;
-    }
+    if (!device_is_ready(i2c)) printk("i2c not ready\n");
+    
 
-    if (!device_is_ready(uart)){
-        printk("uart not ready\n");
-        //return;
-    }
+    if (!device_is_ready(uart))printk("uart not ready\n");
+    
 
-    if (!device_is_ready(adc)) {
-        printk("adc not ready\n");
-        //return;
-    }
+    if (!device_is_ready(adc)) printk("adc not ready\n");
+    
 
-    if (lightError < 0) {
-        printk("adc_channel_setup brightness error: %d\n", lightError);
-        //return;
-    }
+    if (lightError < 0) printk("adc_channel_setup brightness error: %d\n", lightError);
+    
 
-    if (soilError < 0) {
-        printk("adc_channel_setup error: %d\n", soilError);
-        //return;
-    }
-
-    i2c_write_read(i2c,rgbAddr,0x29 | 0x80,1,&whoAmI,1);
-    if (whoAmI != 0) {
-        printk("RGB sensor read  error %x\n",whoAmI);
-        //return;
-    }
-
+    if (soilError < 0) printk("adc_channel_setup error: %d\n", soilError);
+    
+    whoAmI = 0; 
+    i2c_write_read(i2c,rgbAddr,0x12 | 0x80,1,&whoAmI,1);
+    if (whoAmI != 0) printk("RGB sensor read  error %x\n",whoAmI);
+    
+    whoAmI = 0; 
     i2c_reg_read_byte(i2c, accAddr, 0x0D, &whoAmI);
-    if (whoAmI != 0x1A) {
-        printk("accelerometer sensor read error\n");
-        return;
-    }
+    if (whoAmI != 0x1A) printk("accelerometer sensor read error\n");
 
-    if (i2c_reg_read_byte(i2c, tempAndHumidAddr, 0xE7, &whoAmI) != 0) {
-    printk("temp & hum read error\n");
-    return;
-}
+    if (i2c_reg_read_byte(i2c, tempAndHumidAddr, 0xE7, &whoAmI) != 0) printk("temp & hum read error\n");
 }
 
 void everyHourNormalMode (int quantity) {
@@ -620,10 +600,3 @@ void main(void) {
         }
     }
 }
-
-
-/*
-TODO : 
-NM6
-parse gps data
-*/
