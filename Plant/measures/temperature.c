@@ -12,6 +12,7 @@ float humidity;
 float temperature;
 
 void temperatureMeasure(){
+        
         i2c_write_read(i2c,tempAndHumidAddr,&humidAddr,1,&tmphmdData,2);
         humidityRaw = ((uint16_t)tmphmdData[0] << 8) | tmphmdData[1];
 

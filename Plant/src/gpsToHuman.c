@@ -3,6 +3,7 @@
 #include <string.h>
 
 static double nmea_deg_to_dec(const char *s) {
+
     if (!s || !*s) return 0.0;
     double v = strtod(s, NULL);
     int deg = (int)(v / 100.0);
@@ -11,6 +12,7 @@ static double nmea_deg_to_dec(const char *s) {
 }
 
 void gpsToHuman(int mode) {
+
     const char *raw = gpsMsg.gpsQ;
 
     if (!raw[0]) {
@@ -97,5 +99,4 @@ void gpsToHuman(int mode) {
                         fabs(lon), lon >= 0 ? 'E' : 'W',
                         (alt && *alt) ? alt : "?",
                         time_to_use);
-
 }

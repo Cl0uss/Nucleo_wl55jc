@@ -6,6 +6,7 @@ static uint8_t rxByte;
 static bool collecting = false;
 
 static int hexval(char c) {
+    
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'A' && c <= 'F') return 10 + (c - 'A');
     if (c >= 'a' && c <= 'f') return 10 + (c - 'a');
@@ -13,6 +14,7 @@ static int hexval(char c) {
 }
 
 static bool checksum_ok(const char *s) {
+
     const char *star = strrchr(s, '*');
     if (!star || star < s + 1 || !star[1] || !star[2]) return false;
     int h1 = hexval(star[1]), h2 = hexval(star[2]);
@@ -24,6 +26,7 @@ static bool checksum_ok(const char *s) {
 }
 
 void gpsMeasure(void) {
+
     while (true) {
         while (permission) {
             while (uart_poll_in(uart, &rxByte) == 0) {

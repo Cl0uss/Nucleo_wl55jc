@@ -1,6 +1,7 @@
 #include "connector.h"
 
 void rgbChange (int color) {
+    
     gpio_pin_set_dt(&led_r, 0);
     gpio_pin_set_dt(&led_g, 0);
     gpio_pin_set_dt(&led_b, 0);

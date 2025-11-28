@@ -22,5 +22,4 @@ void distanceMeasure() {
         distanceCm = (distanceCm > 99.0f) ? 99.0f : distanceCm;
 
         distanceVal = distanceCm;
-
 }

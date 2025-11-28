@@ -129,12 +129,10 @@ bool newStart = true;
 
 K_MSGQ_DEFINE(messageQueue, sizeof(struct measDataQueue), 8, 4);
 
-bool measureTime = false;
-
 int soilError;
 int lightError;
 uint8_t whoAmI;
-
+uint8_t reg = 0x92;
 
 void rgbLedInit() {
 
@@ -154,6 +152,7 @@ void uartInit() {
 }
 
 void adcInit() {
+    
     soilRawVal = 0;
 
     adc = DEVICE_DT_GET(DT_NODELABEL(adc1));
@@ -197,7 +196,6 @@ void adcInit() {
         .buffer_size = sizeof(brightnessRawVal),
         .resolution  = adcRes,
     };
-
 }
 
 uint8_t registers[2];
@@ -227,7 +225,6 @@ void accelerometerInit(){
 
     registersInput(0x0E, 0x00);     //DYNAMIC RANGE & ±2g
     i2c_write(i2c,registers,sizeof(registers),accAddr);
-
 }
 
 void distanceInit() {
@@ -253,9 +250,10 @@ void distanceInit() {
 }
 
 void alertRaise(int sensor) {
+
     switch (sensor) {
         case 1:
-            printk("!!!light alert!!!\n");
+            printk("!!!light alert!!!\n"); 
             break;
         case 2:
             printk("!!!rgb alert!!!\n");
@@ -272,20 +270,10 @@ void alertRaise(int sensor) {
         case 6:
             printk("!!!soil alert!!!\n");
             break;
-
-
     }
     rgbChange(sensor);
     k_msleep(250);
     rgbChange(0);
-    /*
-    1 - light
-    2 - rgb
-    3 - accelerometer
-    4 - temperature
-    5 - humidity
-    6 - soil
-    */
 }
 
 void manageData () {
@@ -351,7 +339,6 @@ void manageData () {
         if (red > green && red  >  blue)  rgbDominant[0] +=1; //red
         if (green > red && green > blue)  rgbDominant[1] +=1; //green
         if (blue > red  && blue  > green) rgbDominant[2] +=1; //blue
-
     }
 
 
@@ -373,6 +360,7 @@ void manageData () {
 }
 
 void manageAlert(){
+
     if (lightValue < lightLimits[0] || lightValue > lightLimits[1]) alertRaise(1);
     
     if (red   < rgbLimit[0][0] || red   > rgbLimit[0][1] ||
@@ -388,12 +376,12 @@ void manageAlert(){
     if (humValue < humLimits[0] || humValue > humLimits[1]) alertRaise(5);
 
     if (soilValue < soilLimits[0] || soilValue > soilLimits[1]) alertRaise(6);
-
 }
 
 K_THREAD_DEFINE(gpsThread,512,gpsMeasure,NULL,NULL,NULL,1,0,0);
 
 void measures(){
+
     brightnessMeasure();
 
     rgbMeasure();
@@ -425,16 +413,10 @@ void testSensors() {
     
 
     if (!device_is_ready(adc)) printk("adc not ready\n");
-    
 
-    if (lightError < 0) printk("adc_channel_setup brightness error: %d\n", lightError);
-    
-
-    if (soilError < 0) printk("adc_channel_setup error: %d\n", soilError);
-    
     whoAmI = 0; 
-    i2c_write_read(i2c,rgbAddr,0x12 | 0x80,1,&whoAmI,1);
-    if (whoAmI != 0) printk("RGB sensor read  error %x\n",whoAmI);
+    i2c_write_read(i2c,rgbAddr,&reg,1,&whoAmI,1);
+    if (whoAmI != 0x44) printk("RGB sensor read  error %x\n",whoAmI);
     
     whoAmI = 0; 
     i2c_reg_read_byte(i2c, accAddr, 0x0D, &whoAmI);
@@ -444,7 +426,9 @@ void testSensors() {
 }
 
 void everyHourNormalMode (int quantity) {
+
     printk("\n\nHourly update:\n");
+
     // NM3
     tempNormalMode.meanVal = tempNormalMode.sumForMean / quantity;
     humidityNormalMode.meanVal = humidityNormalMode.sumForMean / quantity;
@@ -475,10 +459,10 @@ void everyHourNormalMode (int quantity) {
     printk("Maximum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n\n",accNormalMode.xMaximum,accNormalMode.yMaximum,accNormalMode.zMaximum);
     printk("Minimum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n",accNormalMode.xMinimum,accNormalMode.yMinimum,accNormalMode.zMinimum);
     newStart = true;
-    
 }
 
 void buttonPressed() {
+
     buttonWasPressed = true;
     modeCount++;
     if (modeCount >= 4) modeCount = 1; 
@@ -488,6 +472,7 @@ void buttonPressed() {
 }
 
 void buttonInit() {
+
     gpio_pin_configure_dt(&button,GPIO_INPUT);
     gpio_pin_interrupt_configure_dt(&button,GPIO_INT_EDGE_TO_ACTIVE);
     gpio_init_callback(&button_cb_data, buttonPressed, BIT(button.pin));

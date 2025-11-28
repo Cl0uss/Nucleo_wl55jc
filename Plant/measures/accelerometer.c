@@ -11,6 +11,7 @@ int16_t y;
 int16_t z;
 
 void accelerometerMeasure() {
+        
         i2c_write_read(i2c,accAddr,&xAddr,1,&accData,2);
         x = (int16_t) ((accData[0] << 8) | accData[1]) >> 2;   
 
