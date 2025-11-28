@@ -5,6 +5,6 @@
 void soilMeasure(void)
 {
     adc_read(adc, &soilSeq);
-    printk("soilRawVal = %d\n",soilRawVal);
+    //printk("soilRawVal = %d\n",soilRawVal);
     soilValue = (soilRawVal - 900.0f) * 100.0f / (3600.0f - 900.0f);
 }

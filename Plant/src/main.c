@@ -55,7 +55,7 @@ uint32_t distanceVal;
 const float tempLimits[2]  = {-10.0f, 50.0f};
 const float humLimits[2]   = {25.0f, 75.0f};
 const float lightLimits[2] = {3.0f, 15.0f};
-const float soilLimits[2]  = {900.0f,3600.0f};
+const float soilLimits[2]  = {70.2f,95.0f};
 const float rgbLimit[3][2] = {
     {2500.0f,4500.0f},   //r
     {3500.0f,5500.0f},   //g
@@ -63,7 +63,7 @@ const float rgbLimit[3][2] = {
     // such values when clear is ≈ 10.500
 };
 const float accelerometerLimit[3][2] = {
-    {0.0f,0.2f},    //x
+    {0.0f,1.0f},    //x
     {8.5f,10.5f},   //y
     {0.0f,2.0f}     //z
 };
@@ -253,6 +253,28 @@ void distanceInit() {
 }
 
 void alertRaise(int sensor) {
+    switch (sensor) {
+        case 1:
+            printk("!!!light alert!!!\n");
+            break;
+        case 2:
+            printk("!!!rgb alert!!!\n");
+            break;
+        case 3:
+            printk("!!!accelerometer alert!!!\n");
+            break;
+        case 4:
+            printk("!!!temperature alert!!!\n");
+            break;
+        case 5:
+            printk("!!!humidity alert!!!\n");
+            break;
+        case 6:
+            printk("!!!soil alert!!!\n");
+            break;
+
+
+    }
     rgbChange(sensor);
     k_msleep(250);
     rgbChange(0);
@@ -356,9 +378,9 @@ void manageAlert(){
         green < rgbLimit[1][0] || green > rgbLimit[1][1] ||
         blue  < rgbLimit[2][0] || blue  > rgbLimit[2][1] ) alertRaise(2);
 
-    if (abs(axisX) < accelerometerLimit[0][0] || abs(axisX) > accelerometerLimit[0][1] ||
-        abs(axisY) < accelerometerLimit[1][0] || abs(axisY) > accelerometerLimit[1][1] ||
-        abs(axisZ) < accelerometerLimit[2][0] || abs(axisZ) > accelerometerLimit[2][1] ) alertRaise(3);
+    if (fabsf(axisX) < accelerometerLimit[0][0] || fabsf(axisX) > accelerometerLimit[0][1] ||
+        fabsf(axisY) < accelerometerLimit[1][0] || fabsf(axisY) > accelerometerLimit[1][1] ||
+        fabsf(axisZ) < accelerometerLimit[2][0] || fabsf(axisZ) > accelerometerLimit[2][1] ) alertRaise(3);
 
     if (tempValue < tempLimits[0] || tempValue > tempLimits[1]) alertRaise(4);
 
@@ -471,8 +493,8 @@ void everyHourNormalMode (int quantity) {
     rgbDominant[2] = 0;
 
     //NM5
-    printk("Minimum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n",accNormalMode.xMinimum,accNormalMode.yMinimum,accNormalMode.zMinimum);
     printk("Maximum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n\n",accNormalMode.xMaximum,accNormalMode.yMaximum,accNormalMode.zMaximum);
+    printk("Minimum values of X_axis - %.2fm/s²   Y_axis - %.2fm/s²   Z_axis - %.2fm/s²\n",accNormalMode.xMinimum,accNormalMode.yMinimum,accNormalMode.zMinimum);
     newStart = true;
     
 }
@@ -493,21 +515,6 @@ void buttonInit() {
     gpio_add_callback(button.port,&button_cb_data);
 }
 
-
-
-
-
-void developmentTest() {
-    while(true) {
-        distanceMeasure();
-        printk("%u\n",distanceVal);
-        k_msleep(500);
-    }
-}
-
-
-
-
 void main(void) {
     rgbLedInit();
     i2cInit();
@@ -527,10 +534,7 @@ void main(void) {
     static const struct gpio_dt_spec redLed = GPIO_DT_SPEC_GET(nucleoLedR, gpios);
     gpio_pin_configure_dt(&redLed, GPIO_OUTPUT_INACTIVE);
 
-
-    //developmentTest();
     while (true) {
-
         if (mode == TEST) {
             printk("\nTEST MODE\n");
             testSensors();
