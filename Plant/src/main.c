@@ -406,7 +406,6 @@ void measures(){
     if (mode == ADVANCED) distanceMeasure();
 
     while (permission) k_msleep(1);
-
     manageData();
     if (mode == NORMAL || mode == ADVANCED) manageAlert();
     permission = true;          
