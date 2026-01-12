@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-cd ~/zephyrproject/Nucleo_wl55jc
+cd ~/zephyr/Nucleo_wl55jc
 
 # searching for all subfolders except build and .vscode
 projects=( $(find . -maxdepth 1 -type d ! -name ".*" ! -name "build" -printf "%f\n" | sort) )
@@ -32,7 +32,7 @@ project="${projects[$((choice-1))]}"
 echo "🚀 Project build: $project"
 
 # activating .venv
-source ~/zephyrproject/.venv/bin/activate
+source ~/zephyr/.venv/bin/activate
 
 # west build and flash
 cd "$project"

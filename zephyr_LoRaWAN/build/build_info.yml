@@ -1,0 +1,61 @@
+cmake:
+  application:
+    configuration-dir: '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN'
+    source-dir: '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN'
+  board:
+    name: 'nucleo_wl55jc'
+    path:
+     - '/home/cl0us/zephyr/zephyr/boards/st/nucleo_wl55jc'
+    qualifiers: 'stm32wl55xx'
+    revision: ''
+  devicetree:
+    bindings-dirs:
+     - '/home/cl0us/zephyr/zephyr/dts/bindings'
+    files:
+     - '/home/cl0us/zephyr/zephyr/boards/st/nucleo_wl55jc/nucleo_wl55jc.dts'
+     - '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/boards/nucleo_wl55jc.overlay'
+    include-dirs:
+     - '/home/cl0us/zephyr/modules/hal/ambiq/dts'
+     - '/home/cl0us/zephyr/modules/hal/atmel/include'
+     - '/home/cl0us/zephyr/modules/hal/bouffalolab/include'
+     - '/home/cl0us/zephyr/modules/hal/bouffalolab/include/zephyr'
+     - '/home/cl0us/zephyr/modules/hal/gigadevice/include'
+     - '/home/cl0us/zephyr/modules/hal/microchip/include'
+     - '/home/cl0us/zephyr/modules/hal/microchip/dts'
+     - '/home/cl0us/zephyr/modules/hal/nuvoton/dts'
+     - '/home/cl0us/zephyr/modules/hal/nxp/dts'
+     - '/home/cl0us/zephyr/modules/hal/stm32/dts'
+     - '/home/cl0us/zephyr/modules/hal/ti/dts'
+     - '/home/cl0us/zephyr/zephyr/include'
+     - '/home/cl0us/zephyr/zephyr/include/zephyr'
+     - '/home/cl0us/zephyr/zephyr/dts/common'
+     - '/home/cl0us/zephyr/zephyr/dts/vendor'
+     - '/home/cl0us/zephyr/zephyr/dts/rx'
+     - '/home/cl0us/zephyr/zephyr/dts/x86'
+     - '/home/cl0us/zephyr/zephyr/dts/xtensa'
+     - '/home/cl0us/zephyr/zephyr/dts/sparc'
+     - '/home/cl0us/zephyr/zephyr/dts/riscv'
+     - '/home/cl0us/zephyr/zephyr/dts/posix'
+     - '/home/cl0us/zephyr/zephyr/dts/arm64'
+     - '/home/cl0us/zephyr/zephyr/dts/arm'
+     - '/home/cl0us/zephyr/zephyr/dts/arc'
+     - '/home/cl0us/zephyr/zephyr/dts'
+    user-files:
+     - '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/boards/nucleo_wl55jc.overlay'
+  kconfig:
+    files:
+     - '/home/cl0us/zephyr/zephyr/boards/st/nucleo_wl55jc/nucleo_wl55jc_defconfig'
+     - '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/prj.conf'
+    user-files:
+     - '/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/prj.conf'
+  toolchain:
+    name: 'zephyr'
+    path: '/home/cl0us/zephyr-sdk-0.17.4'
+  zephyr:
+    version: '4.3.99'
+    zephyr-base: '/home/cl0us/zephyr/zephyr'
+version: '0.1.0'
+west:
+  command: '/home/cl0us/zephyr/.venv/bin/west build --pristine=always -b nucleo_wl55jc'
+  topdir: '/home/cl0us/zephyr'
+  version: '1.5.0'
