@@ -1,19 +1,45 @@
-#include <zephyr/device.h>
-#include <zephyr/lorawan/lorawan.h>
-#include <zephyr/kernel.h>
-#include <zephyr/random/random.h>
+#include "connector.h"
+
+
+// ===================   COMMUNICATION   ===================
+
+const struct device *i2c;
+const struct device *uart;
+const struct device *adc;
+const struct device *port;
+struct measDataQueue gpsMsg;
+
+// =================== COMMUNICATION END ===================
+
+    // ===================   SENSOR VALUES   ===================
+
+float axisX;
+float axisY;
+float axisZ;
+float lightValue;
+uint16_t clear;
+uint16_t red;
+uint16_t blue;
+uint16_t green;
+float soilValue;
+float tempValue;
+float humValue;
+int16_t soilRawVal;
+int16_t brightnessRawVal;
+uint32_t distanceVal;
+
+    // =================== SENSOR VALUES END ===================
 
 /* Customize based on network configuration */
 #define LORAWAN_DEV_EUI			{ 0x79, 0x39, 0x32, 0x35, 0x59, 0x37, 0x91, 0x94 } // Use your own DEV_EUI
 #define LORAWAN_JOIN_EUI		{ 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x00, 0xFC, 0x4D }
 #define LORAWAN_APP_KEY			{ 0xf3, 0x1c, 0x2e, 0x8b, 0xc6, 0x71, 0x28, 0x1d, 0x51, 0x16, 0xf0, 0x8f, 0xf0, 0xb7, 0x92, 0x8f }
 
-#define DELAY K_MSEC(5000)  /* 30 seconds */
+#define DELAY K_MSEC(10000)  /* 30 seconds */
 #define MAX_PAYLOAD_SIZE   30
 #define NUM_MAX_RETRIES    30
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_class_a);
 
 static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
@@ -35,11 +61,18 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 }
 
 void initialisation() {
-	
+	i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));
+}
+
+static inline void put_le16(uint8_t *buf, int idx, uint16_t v)
+{
+    buf[idx]     = (uint8_t)(v & 0xFF);
+    buf[idx + 1] = (uint8_t)(v >> 8);
 }
 
 int main(void)
 {
+	initialisation();
 	const struct device *lora_dev;
 	struct lorawan_join_config join_cfg;
 	uint8_t dev_eui[] = LORAWAN_DEV_EUI;
@@ -60,9 +93,7 @@ int main(void)
 	}
 
 #if defined(CONFIG_LORAMAC_REGION_EU868)
-	/* If more than one region Kconfig is selected, app should set region
-	 * before calling lorawan_start()
-	 */
+
 	ret = lorawan_set_region(LORAWAN_REGION_EU868);
 	if (ret < 0) {
 		LOG_ERR("lorawan_set_region failed: %d", ret);
@@ -76,7 +107,7 @@ int main(void)
 		return 0;
 	}
 	
-	lorawan_enable_adr(false); // enable adaptative data rate. not recommended for mobile (non-static position) devices
+	lorawan_enable_adr(false);
 
 	lorawan_register_downlink_callback(&downlink_cb);
 	lorawan_register_dr_changed_callback(lorwan_datarate_changed);
@@ -100,6 +131,8 @@ int main(void)
 
 
 	LOG_INF("Joining network over OTAA");
+
+	
 	while ((ret = lorawan_join(&join_cfg)) < 0) {
 		joining_retries++;
 		if (joining_retries > NUM_MAX_RETRIES){
@@ -114,19 +147,21 @@ int main(void)
 	
 	static uint16_t counter = 0;		
 	uint8_t data[MAX_PAYLOAD_SIZE];
-	
+	int16_t temp = 0;
+	int16_t hum = 0;
+	uint8_t len = 0;
 	while (1) {
-		
-		data[0] = counter; // add a byte with counter value to have some variability in the payload
-		uint8_t len = 1; // length of the data to send
-		ret = lorawan_send(1, data, len,
-				   LORAWAN_MSG_UNCONFIRMED); // Important to set this parameter to LORAWAN_MSG_UNCONFIRMED
-		/*
-		 * Note: The stack may return -EAGAIN if the provided data
-		 * length exceeds the maximum possible one for the region and
-		 * datarate. But since we are just sending the same data here,
-		 * we'll just continue.
-		 */
+		temp = 0;
+		hum = 0;
+		len = 0;
+		temperatureMeasure();
+		temp = (int16_t)lroundf(tempValue * 10.0f);
+		hum = (int16_t)lroundf(humValue * 10.0f);
+		put_le16(data, len, (uint16_t)counter); len +=2;
+		put_le16(data, len, (uint16_t)temp); len += 2;
+		put_le16(data, len, (uint16_t)hum); len += 2;
+		ret = lorawan_send(1, data, len, LORAWAN_MSG_UNCONFIRMED);
+
 		if (ret == -EAGAIN) {
 			LOG_ERR("lorawan_send failed: %d. Continuing...", ret);
 			k_sleep(DELAY);
@@ -140,6 +175,8 @@ int main(void)
 
 		LOG_INF("Data sent!! (data counting #%04d)", counter);
 		counter = (counter < 255) ? counter + 1 : 0;
+		printk("temp - %.1f%%, hum - %.1f%%\n",tempValue,humValue);
 		k_sleep(DELAY);
+
 	}
 }
