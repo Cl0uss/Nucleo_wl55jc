@@ -8,4 +8,6 @@ target_sources(app PRIVATE
     src/main.c
     src/rgbChange.c
     measures/temperature.c
+    measures/gps.c
+    measures/distance.c
     )

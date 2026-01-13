@@ -56,6 +56,6 @@ cmake:
     zephyr-base: '/home/cl0us/zephyr/zephyr'
 version: '0.1.0'
 west:
-  command: '/home/cl0us/zephyr/.venv/bin/west build --pristine=always -b nucleo_wl55jc'
+  command: '/home/cl0us/zephyr/.venv/bin/west build -b nucleo_wl55jc --pristine=always'
   topdir: '/home/cl0us/zephyr'
   version: '1.5.0'

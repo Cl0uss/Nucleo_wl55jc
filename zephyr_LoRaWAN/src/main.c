@@ -98,6 +98,35 @@ static inline void put_le16(uint8_t *buf, int idx, uint16_t v)
     buf[idx + 1] = (uint8_t)(v >> 8);
 }
 
+static inline void put_le32(uint8_t *buf, int idx, uint32_t v)
+{
+    buf[idx]     = (uint8_t)(v & 0xFF);
+    buf[idx + 1] = (uint8_t)((v >> 8) & 0xFF);
+    buf[idx + 2] = (uint8_t)((v >> 16) & 0xFF);
+    buf[idx + 3] = (uint8_t)((v >> 24) & 0xFF);
+}
+
+static int distance_init(void)
+{
+	port = DEVICE_DT_GET(DT_NODELABEL(gpioa));
+	if (!device_is_ready(port)) {
+		LOG_ERR("GPIOA not ready");
+		return -ENODEV;
+	}
+
+	if (gpio_pin_configure(port, 5, GPIO_OUTPUT_INACTIVE)) {
+		LOG_ERR("Cannot configure TRIG");
+		return -EIO;
+	}
+
+	if (gpio_pin_configure(port, 6, GPIO_INPUT)) {
+		LOG_ERR("Cannot configure ECHO");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 
@@ -134,6 +163,15 @@ int main(void)
 	ret = gpio_pin_configure_dt(&led_g, GPIO_OUTPUT_INACTIVE);
 	if (ret < 0) {
 		LOG_ERR("LED G init failed: %d", ret);
+		return 0;
+	}
+
+	uart = DEVICE_DT_GET(DT_NODELABEL(usart1));
+	if (!device_is_ready(uart)) {
+		LOG_ERR("UART not ready");
+	}
+	gps_init();
+	if (distance_init() != 0) {
 		return 0;
 	}
 
@@ -199,12 +237,27 @@ int main(void)
 		temp = 0;
 		hum = 0;
 		len = 0;
+		int32_t lat_e6 = 0;
+		int32_t lon_e6 = 0;
+		bool gps_ok = false;
+		bool gps_real = false;
 		temperatureMeasure();
+		distanceMeasure();
 		temp = (int16_t)lroundf(tempValue * 10.0f);
 		hum = (int16_t)lroundf(humValue * 10.0f);
+		gps_ok = gps_get_latlon(&lat_e6, &lon_e6);
+		gps_real = gps_is_real();
 		put_le16(data, len, (uint16_t)counter); len +=2;
 		put_le16(data, len, (uint16_t)temp); len += 2;
 		put_le16(data, len, (uint16_t)hum); len += 2;
+		if (len + 1 <= MAX_PAYLOAD_SIZE) {
+			data[len++] = (uint8_t)distanceVal;
+		}
+		if (len + 9 <= MAX_PAYLOAD_SIZE) {
+			data[len++] = gps_ok ? 1 : 0;
+			put_le32(data, len, (uint32_t)lat_e6); len += 4;
+			put_le32(data, len, (uint32_t)lon_e6); len += 4;
+		}
 		ret = lorawan_send(1, data, len, LORAWAN_MSG_UNCONFIRMED);
 
 		if (ret == -EAGAIN) {
@@ -220,7 +273,8 @@ int main(void)
 
 		LOG_INF("Data sent!! (data counting #%04d)", counter);
 		counter = (counter < 255) ? counter + 1 : 0;
-		printk("temp - %.1f%%, hum - %.1f%%\n",tempValue,humValue);
+		printk("temp - %.1f%%, hum - %.1f%%, distance - %ucm, gps - %s\n",
+		       tempValue, humValue, distanceVal, gps_real ? "REAL" : "FAKE");
 		k_sleep(DELAY);
 
 	}

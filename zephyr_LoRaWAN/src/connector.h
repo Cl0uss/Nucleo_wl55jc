@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 
 #define rgbAddr 0x29  
@@ -27,14 +28,18 @@ struct measDataQueue {
 extern struct measDataQueue gpsMsg;
 //extern const struct device *adc;
 extern const struct device *i2c;
-//extern const struct device *uart;
-//extern const struct device *port;
+extern const struct device *uart;
+extern const struct device *port;
 
 void rgbChange(int);
 void rgbMeasure(void);
 void accelerometerMeasure(void);
 void temperatureMeasure(void);
 void gpsMeasure(void);
+void gps_init(void);
+bool gps_get_latlon(int32_t *lat_e6, int32_t *lon_e6);
+bool gps_is_real(void);
+void distanceMeasure(void);
 void soilMeasure(void);
 void brightnessMeasure(void);
 void gpsToHuman(int main);
@@ -51,6 +56,7 @@ extern uint16_t blue;
 extern float soilValue;
 extern float tempValue;
 extern float humValue;
+extern uint32_t distanceVal;
 extern uint32_t distanceVal;
 
 extern const struct gpio_dt_spec led_r;
