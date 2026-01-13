@@ -539,7 +539,7 @@ void main(void) {
                 while (k_uptime_get() - startRegMeasure < 30 * MSEC_PER_SEC) {
                     if (buttonWasPressed) {
                         buttonWasPressed = false; 
-                        break;  
+                        break;
                     }
                     k_msleep(1);
                 }
