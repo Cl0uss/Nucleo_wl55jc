@@ -52,3 +52,6 @@ extern float soilValue;
 extern float tempValue;
 extern float humValue;
 extern uint32_t distanceVal;
+
+extern const struct gpio_dt_spec led_r;
+extern const struct gpio_dt_spec led_g;

@@ -6,5 +6,6 @@ project(lorawan_etsist)
 
 target_sources(app PRIVATE 
     src/main.c
+    src/rgbChange.c
     measures/temperature.c
     )

@@ -1,6 +1,5 @@
 /*
  * SPDX-License-Identifier: Apache-2.0
- *
  * Copyright (c) 2022 QRTECH
  */
 
@@ -9,20 +8,45 @@
 		io-channels = <&adc1 5>;
 	};
 
-	gpio_keys {
+	gpio_keys: gpio_keys {
 		compatible = "gpio-keys";
 
-		accel_interrup: adc_in1_pb4 {
+		accel_interrupt: accel_interrupt {
 			label = "FF";
 			gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_3>;
 		};
 	};
 
-	aliases {
-		ff0 = &accel_interrup;
+	leds {
+		compatible = "gpio-leds";
+
+		/* RED: CN9.D5 = PB8 */
+		led_r: led_r {
+			gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
+			label = "LED_R";
+		};
+
+		/* GREEN: CN9.D6 = PB10 */
+		led_g: led_g {
+			gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+			label = "LED_G";
+		};
+
+		/* BLUE: CN5.D9 = PA9 */
+		led_b: led_b {
+			gpios = <&gpioa 9 GPIO_ACTIVE_LOW>;
+			label = "LED_B";
+		};
 	};
 
+	aliases {
+		ff0  = &accel_interrupt;
+
+		ledr = &led_r;
+		ledg = &led_g;
+		ledb = &led_b;
+	};
 };
 
 &adc1 {
@@ -39,13 +63,18 @@
 };
 
 &i2c2 {
-    status = "okay";
-    clock-frequency = <I2C_BITRATE_FAST>; // 400kHz
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>; /* 400 kHz */
+
+	/* You likely need pinctrl here, example (MUST match your board symbols):
+	pinctrl-0 = <&i2c2_scl_xx &i2c2_sda_xx>;
+	pinctrl-names = "default";
+	*/
 };
 
 &usart1 {
 	dmas = <&dmamux1 11 18 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)
-		&dmamux1 1 17 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+		&dmamux1  1 17 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
 	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
 	pinctrl-names = "default";
@@ -53,18 +82,9 @@
 	status = "okay";
 };
 
-&dma1 {
-	status = "okay";
-};
+&dma1 { status = "okay"; };
+&dma2 { status = "okay"; };
+&dmamux1 { status = "okay"; };
 
-&dma2 {
-	status = "okay";
-};
-
-&dmamux1 {
-	status = "okay";
-};
-
-&gpiob {
-    status = "okay";
-};
+&gpiob { status = "okay"; };
+&gpioa { status = "okay"; };

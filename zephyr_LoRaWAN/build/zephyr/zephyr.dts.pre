@@ -2102,26 +2102,50 @@ stm32_lp_tick_source: &lptim1 {
 
 
 
-
 / {
  zephyr,user {
   io-channels = <&adc1 5>;
  };
 
- gpio_keys {
+ gpio_keys: gpio_keys {
   compatible = "gpio-keys";
 
-  accel_interrup: adc_in1_pb4 {
+  accel_interrupt: accel_interrupt {
    label = "FF";
    gpios = <&gpiob 4 ((1 << 0) | (1 << 4))>;
    zephyr,code = <4>;
   };
  };
 
- aliases {
-  ff0 = &accel_interrup;
+ leds {
+  compatible = "gpio-leds";
+
+
+  led_r: led_r {
+   gpios = <&gpiob 8 (1 << 0)>;
+   label = "LED_R";
+  };
+
+
+  led_g: led_g {
+   gpios = <&gpiob 10 (1 << 0)>;
+   label = "LED_G";
+  };
+
+
+  led_b: led_b {
+   gpios = <&gpioa 9 (1 << 0)>;
+   label = "LED_B";
+  };
  };
 
+ aliases {
+  ff0 = &accel_interrupt;
+
+  ledr = &led_r;
+  ledg = &led_g;
+  ledb = &led_b;
+ };
 };
 
 &adc1 {
@@ -2138,8 +2162,13 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &i2c2 {
-    status = "okay";
-    clock-frequency = <400000>;
+ status = "okay";
+ clock-frequency = <400000>;
+
+
+
+
+
 };
 
 &usart1 {
@@ -2152,20 +2181,11 @@ stm32_lp_tick_source: &lptim1 {
  status = "okay";
 };
 
-&dma1 {
- status = "okay";
-};
+&dma1 { status = "okay"; };
+&dma2 { status = "okay"; };
+&dmamux1 { status = "okay"; };
 
-&dma2 {
- status = "okay";
-};
-
-&dmamux1 {
- status = "okay";
-};
-
-&gpiob {
-    status = "okay";
-};
+&gpiob { status = "okay"; };
+&gpioa { status = "okay"; };
 # 0 "<command-line>" 2
 # 1 "/home/cl0us/zephyr/zephyr/misc/empty_file.c"

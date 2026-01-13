@@ -1,9 +1,8 @@
 #include "connector.h"
 
-
 // ===================   COMMUNICATION   ===================
 
-const struct device *i2c;
+const struct device *i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));;
 const struct device *uart;
 const struct device *adc;
 const struct device *port;
@@ -30,7 +29,10 @@ uint32_t distanceVal;
 
     // =================== SENSOR VALUES END ===================
 
-/* Customize based on network configuration */
+const struct gpio_dt_spec led_r = GPIO_DT_SPEC_GET(DT_ALIAS(ledr), gpios);
+const struct gpio_dt_spec led_g = GPIO_DT_SPEC_GET(DT_ALIAS(ledg), gpios);
+
+	/* Customize based on network configuration */
 #define LORAWAN_DEV_EUI			{ 0x79, 0x39, 0x32, 0x35, 0x59, 0x37, 0x91, 0x94 } // Use your own DEV_EUI
 #define LORAWAN_JOIN_EUI		{ 0x70, 0xB3, 0xD5, 0x7E, 0xD0, 0x00, 0xFC, 0x4D }
 #define LORAWAN_APP_KEY			{ 0xf3, 0x1c, 0x2e, 0x8b, 0xc6, 0x71, 0x28, 0x1d, 0x51, 0x16, 0xf0, 0x8f, 0xf0, 0xb7, 0x92, 0x8f }
@@ -42,15 +44,46 @@ uint32_t distanceVal;
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 LOG_MODULE_REGISTER(lorawan_class_a);
 
-static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr, uint8_t len,
-			const uint8_t *hex_data)
+static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
+                        uint8_t len, const uint8_t *hex_data)
 {
-	LOG_INF("Port %d, Pending %d, RSSI %ddB, SNR %ddBm, Time %d", port,
-		flags & LORAWAN_DATA_PENDING, rssi, snr, !!(flags & LORAWAN_TIME_UPDATED));
-	if (hex_data) {
-		LOG_HEXDUMP_INF(hex_data, len, "Payload: ");
-	}
+    LOG_INF("DL port=%u, len=%u", port, len);
+
+    if (!hex_data || len == 0) {
+        return;
+    }
+
+    LOG_HEXDUMP_INF(hex_data, len, "DL payload:");
+
+    /* Convert to C-string (uppercased), safe */
+    char cmd[16];
+    size_t n = (len < (sizeof(cmd) - 1)) ? len : (sizeof(cmd) - 1);
+
+    for (size_t i = 0; i < n; i++) {
+        char c = (char)hex_data[i];
+        cmd[i] = (char)toupper((unsigned char)c);
+    }
+    cmd[n] = '\0';
+
+    /* Trim possible trailing \r \n \0 spaces */
+    while (n > 0 && (cmd[n-1] == '\r' || cmd[n-1] == '\n' || cmd[n-1] == ' ' || cmd[n-1] == '\0')) {
+        cmd[n-1] = '\0';
+        n--;
+    }
+
+    if (strcmp(cmd, "OFF") == 0) {
+        rgbChange(0);
+    } else if (strcmp(cmd, "RED") == 0) {
+        rgbChange(1);
+    } else if (strcmp(cmd, "GREEN") == 0) {
+        rgbChange(2);
+    } else if (strcmp(cmd, "BLUE") == 0) {
+        rgbChange(3);
+    } else {
+        LOG_WRN("Unknown cmd: '%s'", cmd);
+    }
 }
+
 
 static void lorwan_datarate_changed(enum lorawan_datarate dr)
 {
@@ -60,9 +93,6 @@ static void lorwan_datarate_changed(enum lorawan_datarate dr)
 	LOG_INF("New Datarate: DR_%d, Max Payload %d", dr, max_size);
 }
 
-void initialisation() {
-	i2c = DEVICE_DT_GET(DT_NODELABEL(i2c2));
-}
 
 static inline void put_le16(uint8_t *buf, int idx, uint16_t v)
 {
@@ -72,7 +102,7 @@ static inline void put_le16(uint8_t *buf, int idx, uint16_t v)
 
 int main(void)
 {
-	initialisation();
+
 	const struct device *lora_dev;
 	struct lorawan_join_config join_cfg;
 	uint8_t dev_eui[] = LORAWAN_DEV_EUI;

@@ -162,6 +162,16 @@ build CMakeFiles/app.dir/src/main.c.obj: C_COMPILER__app_unscanned_ /home/cl0us/
   TARGET_COMPILE_PDB = CMakeFiles/app.dir/app.pdb
   TARGET_PDB = app/libapp.pdb
 
+build CMakeFiles/app.dir/src/rgbChange.c.obj: C_COMPILER__app_unscanned_ /home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/src/rgbChange.c || cmake_object_order_depends_target_app
+  DEFINES = -DCORE_CM4 -DKERNEL -DK_HEAP_MEM_POOL_SIZE=0 -DPICOLIBC_DOUBLE_PRINTF_SCANF -DREGION_EU868 -DSTM32WL55xx -DUSE_FULL_LL_DRIVER -DUSE_HAL_DRIVER -DZVFS_OPEN_SIZE=0 -D_POSIX_THREAD_SAFE_FUNCTIONS=200809L -D__LINUX_ERRNO_EXTENSIONS__ -D__PROGRAM_START -D__ZEPHYR__=1
+  DEP_FILE = CMakeFiles/app.dir/src/rgbChange.c.obj.d
+  FLAGS = -fno-strict-aliasing -Os -imacros /home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/build/zephyr/include/generated/zephyr/autoconf.h -fno-common -g -gdwarf-4 -fdiagnostics-color=always -mcpu=cortex-m4 -mthumb -mabi=aapcs -mfp16-format=ieee -mtp=soft --sysroot=/home/cl0us/zephyr-sdk-0.17.4/arm-zephyr-eabi/arm-zephyr-eabi -imacros /home/cl0us/zephyr/zephyr/include/zephyr/toolchain/zephyr_stdint.h -Wall -Wformat -Wformat-security -Wno-format-zero-length -Wdouble-promotion -Wno-pointer-sign -Wpointer-arith -Wexpansion-to-defined -Wno-unused-but-set-variable -Werror=implicit-int -fno-pic -fno-pie -fno-asynchronous-unwind-tables -ftls-model=local-exec -fno-reorder-functions --param=min-pagesize=0 -fno-defer-pop -fmacro-prefix-map=/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN=CMAKE_SOURCE_DIR -fmacro-prefix-map=/home/cl0us/zephyr/zephyr=ZEPHYR_BASE -fmacro-prefix-map=/home/cl0us/zephyr=WEST_TOPDIR -ffunction-sections -fdata-sections -specs=picolibc.specs -std=c17
+  INCLUDES = -I/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/build/zephyr/include/generated/zephyr -I/home/cl0us/zephyr/zephyr/include -I/home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/build/zephyr/include/generated -I/home/cl0us/zephyr/zephyr/soc/st/stm32 -I/home/cl0us/zephyr/zephyr/lib/libc/picolibc/include -I/home/cl0us/zephyr/zephyr/lib/posix/c_lib_ext/getopt -I/home/cl0us/zephyr/zephyr/lib/midi2/. -I/home/cl0us/zephyr/zephyr/soc/st/stm32/common/. -I/home/cl0us/zephyr/zephyr/drivers -I/home/cl0us/zephyr/zephyr/soc/st/stm32/stm32wlx/. -I/home/cl0us/zephyr/zephyr/subsys/settings/include -I/home/cl0us/zephyr/modules/hal/cmsis_6/CMSIS/Core/Include -I/home/cl0us/zephyr/zephyr/modules/cmsis_6/. -I/home/cl0us/zephyr/modules/hal/microchip/include -I/home/cl0us/zephyr/modules/hal/st/sensor/inc -I/home/cl0us/zephyr/modules/hal/stm32/stm32cube/stm32wlxx/soc -I/home/cl0us/zephyr/modules/hal/stm32/stm32cube/stm32wlxx/drivers/include -I/home/cl0us/zephyr/modules/hal/stm32/stm32cube/common_ll/include -I/home/cl0us/zephyr/modules/hal/ti/mspm0/source/ti/devices/msp/. -I/home/cl0us/zephyr/modules/hal/ti/mspm0/source/ti/devices/msp/m0p -I/home/cl0us/zephyr/modules/hal/ti/mspm0/source/ti/devices/msp/peripherals -I/home/cl0us/zephyr/modules/hal/ti/mspm0/source/ti/devices/msp/peripherals/m0p -I/home/cl0us/zephyr/modules/hal/ti/mspm0/source/ti/devices/msp/peripherals/m0p/sysctl -isystem /home/cl0us/zephyr/zephyr/lib/libc/common/include
+  OBJECT_DIR = CMakeFiles/app.dir
+  OBJECT_FILE_DIR = CMakeFiles/app.dir/src
+  TARGET_COMPILE_PDB = CMakeFiles/app.dir/app.pdb
+  TARGET_PDB = app/libapp.pdb
+
 build CMakeFiles/app.dir/measures/temperature.c.obj: C_COMPILER__app_unscanned_ /home/cl0us/zephyr/Nucleo_wl55jc/zephyr_LoRaWAN/measures/temperature.c || cmake_object_order_depends_target_app
   DEFINES = -DCORE_CM4 -DKERNEL -DK_HEAP_MEM_POOL_SIZE=0 -DPICOLIBC_DOUBLE_PRINTF_SCANF -DREGION_EU868 -DSTM32WL55xx -DUSE_FULL_LL_DRIVER -DUSE_HAL_DRIVER -DZVFS_OPEN_SIZE=0 -D_POSIX_THREAD_SAFE_FUNCTIONS=200809L -D__LINUX_ERRNO_EXTENSIONS__ -D__PROGRAM_START -D__ZEPHYR__=1
   DEP_FILE = CMakeFiles/app.dir/measures/temperature.c.obj.d
@@ -180,7 +190,7 @@ build CMakeFiles/app.dir/measures/temperature.c.obj: C_COMPILER__app_unscanned_ 
 #############################################
 # Link the static library app/libapp.a
 
-build app/libapp.a: C_STATIC_LIBRARY_LINKER__app_ CMakeFiles/app.dir/src/main.c.obj CMakeFiles/app.dir/measures/temperature.c.obj || zephyr/device_api_ld_target zephyr/driver_validation_h_target zephyr/kobj_types_h_target zephyr/offsets_h zephyr/syscall_list_h_target zephyr/version_h
+build app/libapp.a: C_STATIC_LIBRARY_LINKER__app_ CMakeFiles/app.dir/src/main.c.obj CMakeFiles/app.dir/src/rgbChange.c.obj CMakeFiles/app.dir/measures/temperature.c.obj || zephyr/device_api_ld_target zephyr/driver_validation_h_target zephyr/kobj_types_h_target zephyr/offsets_h zephyr/syscall_list_h_target zephyr/version_h
   OBJECT_DIR = CMakeFiles/app.dir
   POST_BUILD = :
   PRE_LINK = :
