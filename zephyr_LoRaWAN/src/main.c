@@ -77,8 +77,6 @@ static void dl_callback(uint8_t port, uint8_t flags, int16_t rssi, int8_t snr,
         rgbChange(1);
     } else if (strcmp(cmd, "GREEN") == 0) {
         rgbChange(2);
-    } else if (strcmp(cmd, "BLUE") == 0) {
-        rgbChange(3);
     } else {
         LOG_WRN("Unknown cmd: '%s'", cmd);
     }
@@ -119,6 +117,23 @@ int main(void)
 	lora_dev = DEVICE_DT_GET(DT_ALIAS(lora0));
 	if (!device_is_ready(lora_dev)) {
 		LOG_ERR("%s: device not ready.", lora_dev->name);
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&led_r) || !gpio_is_ready_dt(&led_g)) {
+		LOG_ERR("LED GPIOs not ready");
+		return 0;
+	}
+
+	ret = gpio_pin_configure_dt(&led_r, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("LED R init failed: %d", ret);
+		return 0;
+	}
+
+	ret = gpio_pin_configure_dt(&led_g, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("LED G init failed: %d", ret);
 		return 0;
 	}
 
